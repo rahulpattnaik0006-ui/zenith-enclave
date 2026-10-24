@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zenith Enclave | NestSync Smart Township OS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#F0FDFA', 100: '#CCFBF1', 600: '#0D9488', 700: '#0F766E', 900: '#134E4A' },
+            surface: { base: '#F8FAFC', card: '#FFFFFF', border: '#E2E8F0', muted: '#64748B', text: '#0F172A' }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body class="bg-[#F8FAFC] text-[#0F172A] min-h-screen flex flex-col antialiased">
+
+  <!-- ========================================== -->
+  <!-- AUTHENTICATION GATE (RESIDENT OTP & ADMIN) -->
+  <!-- ========================================== -->
+  <div id="auth-gate" class="fixed inset-0 z-50 bg-[#F8FAFC] flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
+      
+      <!-- Left Architectural Brand Panel -->
+      <div class="relative hidden md:flex flex-col justify-between p-8 bg-slate-900 text-white">
+        <img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=80" alt="Zenith Enclave" class="absolute inset-0 w-full h-full object-cover opacity-35">
+        <div class="relative z-10 flex items-center space-x-3">
+          <div class="bg-brand-600 p-2 rounded-lg">
+            <i data-lucide="building-2" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <span class="text-lg font-bold tracking-tight block leading-none">Zenith Enclave</span>
+            <span class="text-xs text-slate-300">NestSync PropTech OS</span>
+          </div>
+        </div>
+
+        <div class="relative z-10 space-y-3">
+          <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded bg-brand-600/90 text-white inline-block">Verified Community Portal</span>
+          <h2 class="text-2xl font-bold leading-snug">Smart Township Living, Unified in Real Time.</h2>
+          <p class="text-xs text-slate-300 leading-relaxed">Access interactive 3D occupancy across 12 residential towers, 20 estate villas, amenity reservations, and instant maintenance resolution.</p>
+        </div>
+
+        <div class="relative z-10 text-[11px] text-slate-400 flex justify-between border-t border-white/15 pt-4">
+          <span>240 High-Rise Units</span>
+          <span>20 Luxury Villas</span>
+          <span>Central Nexus Club</span>
+        </div>
+      </div>
+
+      <!-- Right Login & OTP Form -->
+      <div class="p-8 flex flex-col justify-center space-y-6">
+        <div>
+          <h3 class="text-xl font-bold text-slate-900">Sign in to Zenith Enclave</h3>
+          <p class="text-xs text-slate-500 mt-1">Select your portal mode to continue.</p>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
+          <button onclick="setAuthTab('resident')" id="tab-res-btn" class="py-2 text-xs font-bold rounded-md bg-white text-slate-900 shadow-xs transition">
+            Resident OTP Login
+          </button>
+          <button onclick="setAuthTab('admin')" id="tab-adm-btn" class="py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">
+            Administrator
+          </button>
+        </div>
+
+        <!-- RESIDENT PHONE + OTP FLOW -->
+        <div id="auth-resident-box" class="space-y-4">
+          <!-- Step 1: Phone Details -->
+          <div id="otp-step-1" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+              <input type="text" id="res-name" placeholder="e.g. Aarav Sharma" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Mobile Number (10 Digits)</label>
+              <div class="flex">
+                <span class="inline-flex items-center px-3 text-xs font-semibold text-slate-600 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg">+91</span>
+                <input type="tel" id="res-phone" maxlength="10" placeholder="9876543210" class="w-full text-xs border border-slate-300 rounded-r-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Unit / Flat Reference (Optional)</label>
+              <input type="text" id="res-unit" placeholder="e.g. Tower B - Flat 14" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+            </div>
+            <button onclick="sendResidentOTP()" class="w-full bg-brand-700 hover:bg-brand-900 text-white font-semibold text-xs py-3 rounded-lg transition">
+              Send 6-Digit OTP
+            </button>
+          </div>
+
+          <!-- Step 2: Verify OTP -->
+          <div id="otp-step-2" class="space-y-4 hidden">
+            <div class="p-3 rounded-lg bg-brand-50 border border-brand-100 text-xs text-brand-900">
+              <p class="font-semibold">OTP Dispatched to <span id="display-phone"></span></p>
+              <p class="mt-0.5 text-[11px]">SMS Gateway Simulation Code: <strong id="sim-otp-code" class="text-sm underline"></strong></p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Enter 6-Digit OTP</label>
+              <input type="text" id="res-otp-input" maxlength="6" placeholder="••••••" class="w-full text-center tracking-widest text-base font-bold border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+            </div>
+            <div class="flex gap-2">
+              <button onclick="resetOtpFlow()" class="w-1/3 border border-slate-300 text-slate-700 font-semibold text-xs py-2.5 rounded-lg hover:bg-slate-50">Back</button>
+              <button onclick="verifyResidentOTP()" class="w-2/3 bg-brand-700 hover:bg-brand-900 text-white font-semibold text-xs py-2.5 rounded-lg transition">Verify & Register Forever</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADMINISTRATOR PASSWORD FLOW -->
+        <div id="auth-admin-box" class="space-y-4 hidden">
+          <div class="p-3 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-600">
+            Administrator mode unlocks 3D unit status overrides, lease approvals, and maintenance ticket resolution controls.
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Administrator Master Password</label>
+            <input type="password" id="admin-pass-input" placeholder="Enter master password (zenith2026)" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+          </div>
+          <p id="admin-err-msg" class="text-xs text-red-600 font-semibold hidden">Invalid Administrator Password. Please try again.</p>
+          <button onclick="verifyAdminLogin()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-3 rounded-lg transition">
+            Unlock Township Admin OS
+          </button>
+        </div>
+
+        <!-- Registered Resident Directory Count -->
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <span>Persistent Local Registry Active</span>
+          <span id="reg-count-badge">0 Registered Devices</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TOP NAVIGATION BAR                         -->
+  <!-- ========================================== -->
+  <header class="sticky top-0 z-40 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('map')">
+        <div class="bg-brand-700 text-white p-2 rounded-lg">
+          <i data-lucide="building-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="text-base font-bold tracking-tight text-slate-900 block leading-none">Zenith Enclave</span>
+          <span class="text-[11px] text-slate-500 font-medium" id="user-greeting">NestSync PropTech OS · 260 Units</span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center space-x-1">
+        <button onclick="switchTab('map')" id="btn-map" class="px-3 py-2 rounded-md text-xs font-semibold text-brand-700 bg-brand-50 transition">3D Township Map</button>
+        <button onclick="switchTab('explorer')" id="btn-explorer" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Property Explorer</button>
+        <button onclick="switchTab('matching')" id="btn-matching" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Roommate Matcher</button>
+        <button onclick="switchTab('bulletin')" id="btn-bulletin" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Community Board</button>
+        <button onclick="switchTab('portal')" id="btn-portal" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Bookings & Helpdesk</button>
+      </nav>
+
+      <div class="flex items-center space-x-2">
+        <button onclick="promptRoleSwitch()" id="admin-btn" class="px-3 py-1.5 rounded-md text-xs font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 transition flex items-center gap-1.5">
+          <i data-lucide="shield" class="w-3.5 h-3.5"></i> <span id="admin-label">Role: Resident</span>
+        </button>
+        <button onclick="logoutSession()" title="Switch Account / Logout" class="p-1.5 rounded-md border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 transition">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- MAIN WORKSPACE                             -->
+  <!-- ========================================== -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- MODULE 1: 3D MASTER PLAN -->
+    <section id="section-map" class="space-y-4">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+        <div>
+          <h1 class="text-lg font-bold text-slate-900">Interactive 3D Township Digital Twin</h1>
+          <p class="text-xs text-slate-500">Click any flat, villa, or the central mall in 3D space to inspect details or override occupancy.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="map-filter-type" onchange="apply3DFilters()" class="text-xs border border-slate-200 rounded-md px-2.5 py-1.5 bg-slate-50 font-medium">
+            <option value="All">All Structures (260)</option>
+            <option value="Flat">12 High-Rise Towers (240)</option>
+            <option value="Mansion">Estate Villas (20)</option>
+          </select>
+          <select id="map-filter-status" onchange="apply3DFilters()" class="text-xs border border-slate-200 rounded-md px-2.5 py-1.5 bg-slate-50 font-medium">
+            <option value="All">All Statuses</option>
+            <option value="Available">Available Only</option>
+            <option value="Occupied">Occupied Only</option>
+            <option value="Pending">Pending / Reserved</option>
+          </select>
+          <button onclick="reset3DCamera()" class="text-xs px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium">Reset Camera</button>
+        </div>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-white p-3.5 rounded-lg border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] text-slate-500 font-medium uppercase">Total Inventory</span>
+            <p class="text-lg font-bold text-slate-900">260 Units</p>
+          </div>
+          <span class="w-2.5 h-2.5 rounded-full bg-slate-800"></span>
+        </div>
+        <div class="bg-white p-3.5 rounded-lg border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] text-slate-500 font-medium uppercase">Available Now</span>
+            <p class="text-lg font-bold text-emerald-700" id="kpi-available">--</p>
+          </div>
+          <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
+        </div>
+        <div class="bg-white p-3.5 rounded-lg border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] text-slate-500 font-medium uppercase">Occupied Units</span>
+            <p class="text-lg font-bold text-slate-700" id="kpi-occupied">--</p>
+          </div>
+          <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+        </div>
+        <div class="bg-white p-3.5 rounded-lg border border-slate-200 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] text-slate-500 font-medium uppercase">Central Nexus</span>
+            <p class="text-sm font-bold text-brand-700">Mall & Pool Open</p>
+          </div>
+          <span class="w-3 h-3 rounded-full bg-brand-700"></span>
+        </div>
+      </div>
+
+      <!-- 3D WebGL Canvas -->
+      <div class="w-full h-[540px] bg-slate-100 rounded-xl border border-slate-200 overflow-hidden relative shadow-xs" id="canvas-container">
+        <div id="unit-tooltip" class="absolute bottom-4 left-4 bg-white/95 backdrop-blur border border-slate-200 p-3.5 rounded-lg shadow-md pointer-events-none hidden max-w-xs">
+          <p class="text-[10px] uppercase tracking-wider text-slate-500 font-bold" id="tt-type">Tower Unit</p>
+          <p class="text-sm font-bold text-slate-900 mt-0.5" id="tt-title">Tower A</p>
+          <p class="text-xs font-semibold text-brand-700 mt-0.5" id="tt-price">₹18,500/mo</p>
+          <p class="text-[11px] text-slate-500 mt-1" id="tt-status">Status: Available</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 2: DYNAMIC PROPERTY EXPLORER -->
+    <section id="section-explorer" class="space-y-5 hidden">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 class="text-lg font-bold text-slate-900">Township Property Directory</h1>
+          <p class="text-xs text-slate-500">Browse all 240 high-rise flats and 20 independent villas with live filters.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <input type="text" id="dir-search" oninput="renderDirectory()" placeholder="Search Tower B, Villa 04..." class="text-xs border border-slate-200 rounded-md px-3 py-2 w-44">
+          <select id="dir-type" onchange="renderDirectory()" class="text-xs border border-slate-200 rounded-md px-2.5 py-2 bg-white">
+            <option value="All">All Types</option>
+            <option value="Flat">Tower Flats</option>
+            <option value="Mansion">Luxury Villas</option>
+          </select>
+          <select id="dir-status" onchange="renderDirectory()" class="text-xs border border-slate-200 rounded-md px-2.5 py-2 bg-white">
+            <option value="All">All Statuses</option>
+            <option value="Available">Available</option>
+            <option value="Occupied">Occupied</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <select id="dir-budget" onchange="renderDirectory()" class="text-xs border border-slate-200 rounded-md px-2.5 py-2 bg-white">
+            <option value="999999">Any Budget</option>
+            <option value="20000">Under ₹20,000/mo</option>
+            <option value="30000">Under ₹30,000/mo</option>
+            <option value="80000">Up to ₹80,000/mo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4" id="directory-grid"></div>
+    </section>
+
+    <!-- MODULE 3: SMART ROOMMATE MATCHING QUESTIONNAIRE -->
+    <section id="section-matching" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+          <h2 class="text-base font-bold text-slate-900">Lifestyle Compatibility Wizard</h2>
+          <p class="text-xs text-slate-500">Match with existing residents across Zenith Enclave for shared co-living suites.</p>
+          
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Sleep Schedule</label>
+              <select id="match-sleep" class="w-full text-xs border border-slate-200 rounded-md px-3 py-2 bg-white">
+                <option value="Early Bird">Early Bird (Up by 6 AM)</option>
+                <option value="Night Owl">Night Owl (Up past Midnight)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Work Routine</label>
+              <select id="match-work" class="w-full text-xs border border-slate-200 rounded-md px-3 py-2 bg-white">
+                <option value="Remote">Work From Home (Remote)</option>
+                <option value="Office / Hybrid">Office / Hybrid</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Cleanliness Standard (1-5)</label>
+              <input type="range" id="match-clean" min="3" max="5" value="4" class="w-full accent-brand-700">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Pet Preference</label>
+              <select id="match-pets" class="w-full text-xs border border-slate-200 rounded-md px-3 py-2 bg-white">
+                <option value="No Pets">Prefer No Pets</option>
+                <option value="Pet Friendly">Pet Friendly</option>
+              </select>
+            </div>
+            <button onclick="runRoommateMatcher()" class="w-full bg-brand-700 hover:bg-brand-900 text-white font-semibold text-xs py-2.5 rounded-md transition">
+              Calculate Top Housemate Matches
+            </button>
+          </div>
+        </div>
+
+        <div class="md:col-span-2 bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+          <h2 class="text-base font-bold text-slate-900">Recommended Co-Living Matches</h2>
+          <div id="matcher-results" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULE 4: COMMUNITY BULLETIN & EVENT BOARD -->
+    <section id="section-bulletin" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 space-y-3.5 h-fit">
+          <h2 class="text-base font-bold text-slate-900">Post to Township Board</h2>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Category</label>
+            <select id="blt-tag" class="w-full text-xs border border-slate-200 rounded px-3 py-2 bg-white">
+              <option value="Event">Building Event / Meetup</option>
+              <option value="Marketplace">Resident Marketplace (Buy/Sell)</option>
+              <option value="Notice">Community Announcement</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Title</label>
+            <input type="text" id="blt-title" placeholder="e.g. Weekend Badminton at Sports Wing" class="w-full text-xs border border-slate-200 rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Location / Venue</label>
+            <input type="text" id="blt-loc" placeholder="e.g. Central Mall Court 2" class="w-full text-xs border border-slate-200 rounded px-3 py-2">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Details</label>
+            <textarea id="blt-desc" rows="3" placeholder="Share time, details, or price..." class="w-full text-xs border border-slate-200 rounded px-3 py-2"></textarea>
+          </div>
+          <button onclick="addBulletinPost()" class="w-full bg-brand-700 hover:bg-brand-900 text-white text-xs font-semibold py-2.5 rounded transition">Publish Post</button>
+        </div>
+
+        <div class="md:col-span-2 space-y-3.5" id="bulletin-feed"></div>
+      </div>
+    </section>
+
+    <!-- MODULE 5: AMENITY BOOKING & MAINTENANCE HELPDESK -->
+    <section id="section-portal" class="space-y-6 hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Left: Central Complex Facility Booking -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Central Nexus Amenity Booking</h2>
+            <p class="text-xs text-slate-500">Reserve slots at the Swimming Pool, VR Gaming Zone, or Co-Working Pods.</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <select id="bkg-facility" class="text-xs border border-slate-200 rounded px-2.5 py-2 bg-white">
+              <option>Olympic Swimming Pool</option>
+              <option>Nexus VR Gaming Arena</option>
+              <option>Bowling Alley (Lane 1-4)</option>
+              <option>Conference Pod A</option>
+              <option>Rooftop BBQ Pavilion</option>
+            </select>
+            <select id="bkg-slot" class="text-xs border border-slate-200 rounded px-2.5 py-2 bg-white">
+              <option>07:00 AM - 08:00 AM</option>
+              <option>11:00 AM - 01:00 PM</option>
+              <option>05:00 PM - 06:00 PM</option>
+              <option>07:00 PM - 09:00 PM</option>
+            </select>
+            <input type="text" id="bkg-unit" placeholder="Your Unit (e.g. TWR-A-04)" class="text-xs border border-slate-200 rounded px-2.5 py-2">
+          </div>
+          <button onclick="createFacilityBooking()" class="bg-brand-700 hover:bg-brand-900 text-white text-xs font-semibold px-4 py-2 rounded transition">Confirm Slot Reservation</button>
+
+          <div class="pt-3 border-t border-slate-100 space-y-2" id="booking-list"></div>
+        </div>
+
+        <!-- Right: Maintenance & Complaint Tracker -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 space-y-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Maintenance & Complaint Tracker</h2>
+            <p class="text-xs text-slate-500">Live issue resolution pipeline (Admin can advance ticket statuses).</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <input type="text" id="tkt-unit" placeholder="Location (e.g. Tower C-09)" class="text-xs border border-slate-200 rounded px-2.5 py-2">
+            <select id="tkt-cat" class="text-xs border border-slate-200 rounded px-2.5 py-2 bg-white">
+              <option>Plumbing & Water</option>
+              <option>Electrical / Power</option>
+              <option>Air Conditioning (HVAC)</option>
+              <option>Smart Lock / Gate</option>
+            </select>
+            <select id="tkt-prio" class="text-xs border border-slate-200 rounded px-2.5 py-2 bg-white">
+              <option value="Medium">Priority: Medium</option>
+              <option value="High">Priority: Urgent</option>
+              <option value="Low">Priority: Low</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="tkt-desc" placeholder="Describe the issue briefly..." class="flex-grow text-xs border border-slate-200 rounded px-3 py-2">
+            <button onclick="submitTicket()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded shrink-0 transition">Lodge Ticket</button>
+          </div>
+
+          <div class="pt-3 border-t border-slate-100 space-y-2.5" id="ticket-list"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PROPERTY INSPECTION & ADMIN OVERRIDE MODAL -->
+  <div id="prop-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full border border-slate-200 shadow-xl overflow-hidden">
+      <img id="mdl-img" src="" alt="Property" class="w-full h-48 object-cover">
+      <div class="p-5 space-y-4">
+        <div class="flex justify-between items-start">
+          <div>
+            <span id="mdl-badge" class="text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-brand-50 text-brand-700"></span>
+            <h3 id="mdl-title" class="text-lg font-bold text-slate-900 mt-1"></h3>
+          </div>
+          <button onclick="closePropertyModal()" class="text-slate-400 hover:text-slate-700 text-sm font-bold">✕</button>
+        </div>
+
+        <div class="flex justify-between items-center py-2.5 border-y border-slate-100 text-xs">
+          <span>Monthly Rent: <strong id="mdl-rent" class="text-sm text-brand-700"></strong></span>
+          <span>Current Status: <strong id="mdl-status"></strong></span>
+        </div>
+
+        <div>
+          <p class="text-xs font-semibold text-slate-700 mb-1.5">Included Amenities & Features:</p>
+          <div id="mdl-amenities" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Admin Override Bar -->
+        <div id="mdl-admin-box" class="hidden bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2">
+          <p class="text-[11px] font-bold uppercase text-slate-700">Admin Occupancy Override (Updates 3D Twin Live)</p>
+          <div class="flex gap-2">
+            <button onclick="changeUnitStatus('Available')" class="flex-1 py-1.5 text-xs font-semibold rounded bg-emerald-600 text-white hover:bg-emerald-700">Set Available</button>
+            <button onclick="changeUnitStatus('Pending')" class="flex-1 py-1.5 text-xs font-semibold rounded bg-amber-600 text-white hover:bg-amber-700">Set Pending</button>
+            <button onclick="changeUnitStatus('Occupied')" class="flex-1 py-1.5 text-xs font-semibold rounded bg-slate-600 text-white hover:bg-slate-700">Set Occupied</button>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="closePropertyModal()" class="px-4 py-2 text-xs font-semibold border border-slate-200 rounded-md text-slate-600">Close</button>
+          <button onclick="reserveUnit()" id="mdl-reserve-btn" class="px-4 py-2 text-xs font-semibold bg-brand-700 text-white rounded-md hover:bg-brand-900">Request Lease</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ADMIN PASSWORD MODAL (FROM NAVBAR) -->
+  <div id="quick-admin-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl max-w-sm w-full p-5 border border-slate-200 shadow-xl space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-sm font-bold text-slate-900">Administrator Authentication</h3>
+        <button onclick="closeQuickAdminModal()" class="text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-500">Enter the township master password to unlock Administrator privileges.</p>
+      <input type="password" id="quick-admin-pass" placeholder="Password (zenith2026)" class="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-700">
+      <p id="quick-admin-err" class="text-xs text-red-600 font-semibold hidden">Incorrect password!</p>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeQuickAdminModal()" class="px-3 py-1.5 text-xs font-semibold border border-slate-200 rounded text-slate-600">Cancel</button>
+        <button onclick="confirmQuickAdmin()" class="px-4 py-1.5 text-xs font-semibold bg-brand-700 text-white rounded hover:bg-brand-900">Verify</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/mockData.js"></script>
+  <script src="js/threeScene.js"></script>
+  <script src="js/aiAssistant.js"></script>
+  <script>
+    lucide.createIcons();
+
+    let generatedOTP = null;
+    const STORAGE_KEY_STATE = 'zenith_enclave_state_v1';
+    const STORAGE_KEY_USER = 'zenith_enclave_user_v1';
+    const STORAGE_KEY_RESIDENTS = 'zenith_enclave_residents_v1';
+
+    // Load Persistent State from LocalStorage
+    function loadPersistedState() {
+      const savedState = localStorage.getItem(STORAGE_KEY_STATE);
+      if (savedState) {
+        try {
+          const parsed = JSON.parse(savedState);
+          if (parsed.properties && parsed.properties.length === 260) {
+            appState.properties = parsed.properties;
+            appState.tickets = parsed.tickets || appState.tickets;
+            appState.bookings = parsed.bookings || appState.bookings;
+            appState.bulletins = parsed.bulletins || appState.bulletins;
+          }
+        } catch (e) { console.error(e); }
+      }
+
+      const residents = JSON.parse(localStorage.getItem(STORAGE_KEY_RESIDENTS) || '[]');
+      document.getElementById('reg-count-badge').textContent = `${residents.length} Registered Resident(s)`;
+
+      const activeUser = localStorage.getItem(STORAGE_KEY_USER);
+      if (activeUser) {
+        const userObj = JSON.parse(activeUser);
+        applyLoggedInSession(userObj);
+      }
+    }
+
+    function saveStateToStorage() {
+      localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify({
+        properties: appState.properties,
+        tickets: appState.tickets,
+        bookings: appState.bookings,
+        bulletins: appState.bulletins
+      }));
+    }
+
+    // Auth Gate Tabs
+    function setAuthTab(mode) {
+      const resBox = document.getElementById('auth-resident-box');
+      const admBox = document.getElementById('auth-admin-box');
+      const resBtn = document.getElementById('tab-res-btn');
+      const admBtn = document.getElementById('tab-adm-btn');
+
+      if (mode === 'resident') {
+        resBox.classList.remove('hidden');
+        admBox.classList.add('hidden');
+        resBtn.className = 'py-2 text-xs font-bold rounded-md bg-white text-slate-900 shadow-xs transition';
+        admBtn.className = 'py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
+      } else {
+        resBox.classList.add('hidden');
+        admBox.classList.remove('hidden');
+        admBtn.className = 'py-2 text-xs font-bold rounded-md bg-white text-slate-900 shadow-xs transition';
+        resBtn.className = 'py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
+      }
+    }
+
+    // Resident Phone + OTP
+    function sendResidentOTP() {
+      const name = document.getElementById('res-name').value.trim();
+      const phone = document.getElementById('res-phone').value.trim();
+      if (!name) return alert('Please enter your full name.');
+      if (!/^\d{10}$/.test(phone)) return alert('Please enter a valid 10-digit mobile number.');
+
+      generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+      document.getElementById('display-phone').textContent = `+91 ${phone}`;
+      document.getElementById('sim-otp-code').textContent = generatedOTP;
+
+      document.getElementById('otp-step-1').classList.add('hidden');
+      document.getElementById('otp-step-2').classList.remove('hidden');
+    }
+
+    function resetOtpFlow() {
+      document.getElementById('otp-step-2').classList.add('hidden');
+      document.getElementById('otp-step-1').classList.remove('hidden');
+    }
+
+    function verifyResidentOTP() {
+      const entered = document.getElementById('res-otp-input').value.trim();
+      if (entered !== generatedOTP) return alert('Invalid OTP code! Please check the 6-digit code displayed above.');
+
+      const name = document.getElementById('res-name').value.trim();
+      const phone = document.getElementById('res-phone').value.trim();
+      const unit = document.getElementById('res-unit').value.trim() || 'Resident Member';
+
+      const residents = JSON.parse(localStorage.getItem(STORAGE_KEY_RESIDENTS) || '[]');
+      const existingIdx = residents.findIndex(r => r.phone === phone);
+      const userObj = { name, phone, unit, role: 'resident', registeredAt: new Date().toISOString() };
+
+      if (existingIdx >= 0) {
+        residents[existingIdx] = userObj;
+      } else {
+        residents.push(userObj);
+      }
+      localStorage.setItem(STORAGE_KEY_RESIDENTS, JSON.stringify(residents));
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(userObj));
+
+      applyLoggedInSession(userObj);
+    }
+
+    // Admin Login from Gate
+    function verifyAdminLogin() {
+      const pass = document.getElementById('admin-pass-input').value;
+      const err = document.getElementById('admin-err-msg');
+      if (pass === 'zenith2026') {
+        err.classList.add('hidden');
+        const adminUser = { name: 'Township Administrator', phone: 'ADMIN', unit: 'Command Center', role: 'admin' };
+        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(adminUser));
+        applyLoggedInSession(adminUser);
+      } else {
+        err.classList.remove('hidden');
+      }
+    }
+
+    function applyLoggedInSession(userObj) {
+      document.getElementById('auth-gate').classList.add('hidden');
+      appState.isAdmin = userObj.role === 'admin';
+      appState.currentUser = userObj;
+
+      document.getElementById('user-greeting').textContent = `${userObj.name} (${userObj.unit})`;
+      if (userObj.unit && userObj.unit !== 'Resident Member') {
+        document.getElementById('bkg-unit').value = userObj.unit;
+        document.getElementById('tkt-unit').value = userObj.unit;
+      }
+
+      updateAdminUI();
+    }
+
+    function logoutSession() {
+      localStorage.removeItem(STORAGE_KEY_USER);
+      document.getElementById('auth-gate').classList.remove('hidden');
+      resetOtpFlow();
+    }
+
+    // Navbar Admin Switch with Password Check
+    function promptRoleSwitch() {
+      if (appState.isAdmin) {
+        appState.isAdmin = false;
+        updateAdminUI();
+      } else {
+        document.getElementById('quick-admin-pass').value = '';
+        document.getElementById('quick-admin-err').classList.add('hidden');
+        const m = document.getElementById('quick-admin-modal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      }
+    }
+
+    function closeQuickAdminModal() {
+      const m = document.getElementById('quick-admin-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function confirmQuickAdmin() {
+      const pass = document.getElementById('quick-admin-pass').value;
+      if (pass === 'zenith2026') {
+        appState.isAdmin = true;
+        updateAdminUI();
+        closeQuickAdminModal();
+      } else {
+        document.getElementById('quick-admin-err').classList.remove('hidden');
+      }
+    }
+
+    function updateAdminUI() {
+      const btn = document.getElementById('admin-btn');
+      const label = document.getElementById('admin-label');
+      if (appState.isAdmin) {
+        label.textContent = 'Role: Township Admin (Active)';
+        btn.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-brand-700 text-white transition flex items-center gap-1.5';
+      } else {
+        label.textContent = 'Role: Resident';
+        btn.className = 'px-3 py-1.5 rounded-md text-xs font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 transition flex items-center gap-1.5';
+      }
+      renderTickets();
+    }
+
+    function switchTab(tab) {
+      ['map', 'explorer', 'matching', 'bulletin', 'portal'].forEach(t => {
+        document.getElementById(`section-${t}`).classList.add('hidden');
+        document.getElementById(`btn-${t}`).className = 'px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition';
+      });
+      document.getElementById(`section-${tab}`).classList.remove('hidden');
+      document.getElementById(`btn-${tab}`).className = 'px-3 py-2 rounded-md text-xs font-semibold text-brand-700 bg-brand-50 transition';
+    }
+
+    function updateKPIs() {
+      const avail = appState.properties.filter(p => p.status === 'Available').length;
+      const occ = appState.properties.filter(p => p.status === 'Occupied').length;
+      document.getElementById('kpi-available').textContent = `${avail} Units`;
+      document.getElementById('kpi-occupied').textContent = `${occ} Units`;
+    }
+
+    function apply3DFilters() {
+      const type = document.getElementById('map-filter-type').value;
+      const status = document.getElementById('map-filter-status').value;
+      if (window.sync3DSceneWithState) window.sync3DSceneWithState(type, status);
+    }
+
+    // Property Modal
+    function openPropertyModal(id) {
+      const prop = appState.properties.find(p => p.id === id);
+      if (!prop) return;
+      appState.selectedPropertyId = id;
+
+      document.getElementById('mdl-img').src = prop.image;
+      document.getElementById('mdl-badge').textContent = `${prop.type} · ${prop.id}`;
+      document.getElementById('mdl-title').textContent = prop.title;
+      document.getElementById('mdl-rent').textContent = `₹${prop.rent.toLocaleString('en-IN')}/mo`;
+      document.getElementById('mdl-status').textContent = prop.status;
+
+      const amBox = document.getElementById('mdl-amenities');
+      amBox.innerHTML = prop.amenities.map(a => `<span class="text-[11px] bg-slate-100 text-slate-700 px-2.5 py-1 rounded font-medium">${a}</span>`).join('');
+
+      document.getElementById('mdl-admin-box').classList.toggle('hidden', !appState.isAdmin);
+      document.getElementById('mdl-reserve-btn').classList.toggle('hidden', prop.status !== 'Available');
+
+      const modal = document.getElementById('prop-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closePropertyModal() {
+      const modal = document.getElementById('prop-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function changeUnitStatus(newStatus) {
+      const prop = appState.properties.find(p => p.id === appState.selectedPropertyId);
+      if (!prop) return;
+      prop.status = newStatus;
+      document.getElementById('mdl-status').textContent = newStatus;
+      saveStateToStorage();
+      updateKPIs();
+      apply3DFilters();
+      renderDirectory();
+    }
+
+    function reserveUnit() {
+      changeUnitStatus('Pending');
+      alert('Lease reservation request submitted! Unit status updated to Pending on the 3D Map.');
+      closePropertyModal();
+    }
+
+    function renderDirectory() {
+      const q = document.getElementById('dir-search').value.toLowerCase();
+      const type = document.getElementById('dir-type').value;
+      const status = document.getElementById('dir-status').value;
+      const maxRent = parseInt(document.getElementById('dir-budget').value, 10);
+
+      const filtered = appState.properties.filter(p => {
+        return (type === 'All' || p.type === type) &&
+               (status === 'All' || p.status === status) &&
+               (p.rent <= maxRent) &&
+               (p.title.toLowerCase().includes(q) || p.id.toLowerCase().includes(q));
+      }).slice(0, 24);
+
+      const grid = document.getElementById('directory-grid');
+      grid.innerHTML = filtered.map(p => {
+        const badgeColor = p.status === 'Available' ? 'bg-emerald-50 text-emerald-700' : (p.status === 'Pending' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600');
+        return `
+          <div class="bg-white rounded-lg border border-slate-200 overflow-hidden hover:shadow-md transition flex flex-col justify-between">
+            <div>
+              <img src="${p.image}" class="w-full h-36 object-cover" alt="${p.title}">
+              <div class="p-3.5 space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] font-bold uppercase text-brand-700 bg-brand-50 px-2 py-0.5 rounded">${p.id}</span>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${badgeColor}">${p.status}</span>
+                </div>
+                <h3 class="font-bold text-sm text-slate-900">${p.title}</h3>
+                <p class="text-[11px] text-slate-500">${p.amenities.slice(0, 2).join(' · ')}</p>
+              </div>
+            </div>
+            <div class="p-3.5 pt-2 border-t border-slate-100 flex justify-between items-center">
+              <span class="font-bold text-sm text-slate-900">₹${p.rent.toLocaleString('en-IN')}<span class="text-[10px] font-normal text-slate-500">/mo</span></span>
+              <button onclick="openPropertyModal('${p.id}')" class="text-xs font-semibold bg-brand-700 text-white px-2.5 py-1 rounded hover:bg-brand-900">Inspect</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function runRoommateMatcher() {
+      const sleep = document.getElementById('match-sleep').value;
+      const work = document.getElementById('match-work').value;
+      const clean = parseInt(document.getElementById('match-clean').value, 10);
+      const pets = document.getElementById('match-pets').value;
+
+      const occupiedUnits = appState.properties.filter(p => p.roommate !== null);
+      const scored = occupiedUnits.map(p => {
+        let score = 55;
+        if (p.roommate.schedule === sleep) score += 18;
+        if (p.roommate.work === work) score += 12;
+        if (Math.abs(p.roommate.cleanliness - clean) <= 1) score += 10;
+        if (p.roommate.pets === pets) score += 5;
+        return { prop: p, score: Math.min(score, 99) };
+      }).sort((a, b) => b.score - a.score).slice(0, 6);
+
+      document.getElementById('matcher-results').innerHTML = scored.map(({ prop, score }) => `
+        <div class="p-3.5 rounded-lg border border-slate-200 flex flex-col justify-between gap-2">
+          <div class="flex justify-between items-start">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900">${prop.roommate.name}</h4>
+              <p class="text-xs text-slate-500">${prop.title}</p>
+            </div>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-emerald-50 text-emerald-700">${score}% Match</span>
+          </div>
+          <div class="flex flex-wrap gap-1 text-[11px] text-slate-600">
+            <span class="bg-slate-100 px-2 py-0.5 rounded">${prop.roommate.schedule}</span>
+            <span class="bg-slate-100 px-2 py-0.5 rounded">${prop.roommate.work}</span>
+            <span class="bg-slate-100 px-2 py-0.5 rounded">${prop.roommate.pets}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderBulletins() {
+      document.getElementById('bulletin-feed').innerHTML = appState.bulletins.map(b => `
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-start gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-50 text-brand-700">${b.tag}</span>
+              <span class="text-xs text-slate-500 font-medium">${b.location} · Posted by ${b.author}</span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">${b.title}</h3>
+            <p class="text-xs text-slate-600">${b.desc}</p>
+          </div>
+          <button onclick="toggleRsvp('${b.id}')" class="shrink-0 px-3 py-1.5 rounded text-xs font-semibold border ${b.userRsvped ? 'bg-brand-700 text-white border-brand-700' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}">
+            ${b.userRsvped ? '✓ Going' : 'RSVP'} (${b.rsvps})
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function toggleRsvp(id) {
+      const item = appState.bulletins.find(b => b.id === id);
+      if (!item) return;
+      item.userRsvped = !item.userRsvped;
+      item.rsvps += item.userRsvped ? 1 : -1;
+      saveStateToStorage();
+      renderBulletins();
+    }
+
+    function addBulletinPost() {
+      const tag = document.getElementById('blt-tag').value;
+      const title = document.getElementById('blt-title').value.trim();
+      const loc = document.getElementById('blt-loc').value.trim() || 'Zenith Community';
+      const desc = document.getElementById('blt-desc').value.trim();
+      if (!title || !desc) return alert('Please enter a title and description.');
+
+      const authorName = appState.currentUser ? appState.currentUser.name : (appState.isAdmin ? 'Township Admin' : 'Resident');
+      appState.bulletins.unshift({
+        id: 'BLT-' + Date.now(),
+        tag, title, author: authorName, location: loc, rsvps: 1, userRsvped: true, desc
+      });
+      document.getElementById('blt-title').value = '';
+      document.getElementById('blt-desc').value = '';
+      saveStateToStorage();
+      renderBulletins();
+    }
+
+    function renderBookings() {
+      document.getElementById('booking-list').innerHTML = appState.bookings.map(b => `
+        <div class="p-3 rounded-lg border border-slate-200 flex justify-between items-center text-xs">
+          <div>
+            <p class="font-bold text-slate-900">${b.facility}</p>
+            <p class="text-slate-500">${b.slot} · Reserved by <strong>${b.bookedBy}</strong></p>
+          </div>
+          <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold">Confirmed</span>
+        </div>
+      `).join('');
+    }
+
+    function createFacilityBooking() {
+      const facility = document.getElementById('bkg-facility').value;
+      const slot = document.getElementById('bkg-slot').value;
+      const unit = document.getElementById('bkg-unit').value.trim() || 'Resident Unit';
+
+      const conflict = appState.bookings.some(b => b.facility === facility && b.slot === slot);
+      if (conflict) return alert('Slot already reserved! Double-booking prevented by NestSync guard.');
+
+      appState.bookings.unshift({ id: 'BKG-' + Date.now(), facility, slot, bookedBy: unit });
+      saveStateToStorage();
+      renderBookings();
+    }
+
+    function renderTickets() {
+      document.getElementById('ticket-list').innerHTML = appState.tickets.map(t => {
+        const badge = t.status === 'Resolved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (t.status === 'In Progress' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-700 border-slate-200');
+        const nextBtn = appState.isAdmin && t.status !== 'Resolved'
+          ? `<button onclick="advanceTicket('${t.id}')" class="text-[11px] bg-brand-700 text-white px-2 py-1 rounded font-semibold">Advance Status →</button>`
+          : '';
+        return `
+          <div class="p-3 rounded-lg border border-slate-200 flex justify-between items-center gap-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-900">${t.unit}</span>
+                <span class="text-[10px] text-slate-500">${t.category} · ${t.time}</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-0.5">${t.desc}</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded border ${badge}">${t.status}</span>
+              ${nextBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function submitTicket() {
+      const unit = document.getElementById('tkt-unit').value.trim();
+      const category = document.getElementById('tkt-cat').value;
+      const priority = document.getElementById('tkt-prio').value;
+      const desc = document.getElementById('tkt-desc').value.trim();
+      if (!unit || !desc) return alert('Please enter your unit location and issue description.');
+
+      appState.tickets.unshift({ id: 'TKT-' + Date.now(), unit, category, priority, desc, status: 'Pending', time: 'Just now' });
+      document.getElementById('tkt-desc').value = '';
+      saveStateToStorage();
+      renderTickets();
+    }
+
+    function advanceTicket(id) {
+      const t = appState.tickets.find(x => x.id === id);
+      if (!t) return;
+      t.status = t.status === 'Pending' ? 'In Progress' : 'Resolved';
+      saveStateToStorage();
+      renderTickets();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadPersistedState();
+      updateKPIs();
+      renderDirectory();
+      runRoommateMatcher();
+      renderBulletins();
+      renderBookings();
+      renderTickets();
+      setTimeout(() => apply3DFilters(), 200);
+    });
+  </script>
+</body>
+</html>
