@@ -63,12 +63,13 @@ window.addEventListener('DOMContentLoaded', () => {
     scene.add(lawn);
   };
 
-  // West Wing Park, East Wing Park, Central Plaza Lawn, Villa Green Belts
+  // West Wing Park, East Wing Park, Central Plaza Lawn, Villa Green Belts & Community Garden
   createLawn(85, 65, -81, -41);
   createLawn(85, 65, 79, -41);
   createLawn(105, 58, 5, -38);
   createLawn(245, 22, -2, 35);
   createLawn(245, 22, -2, 61);
+  createLawn(260, 24, 0, 95); // South Botanical Garden Belt
 
   // 4. Asphalt Road Network, Lane Markings & Walkways
   const roadMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
@@ -81,6 +82,12 @@ window.addEventListener('DOMContentLoaded', () => {
   mainRoad.receiveShadow = true;
   scene.add(mainRoad);
 
+  // Main Entry Avenue (From South Gate to Main Boulevard)
+  const entryRoad = new THREE.Mesh(new THREE.BoxGeometry(16, 0.36, 45), roadMat);
+  entryRoad.position.set(0, 0.18, 95);
+  entryRoad.receiveShadow = true;
+  scene.add(entryRoad);
+
   // Dashed Center Road Markings
   for (let rx = -155; rx <= 155; rx += 14) {
     const dash = new THREE.Mesh(new THREE.PlaneGeometry(7, 0.5), stripeMat);
@@ -89,10 +96,10 @@ window.addEventListener('DOMContentLoaded', () => {
     scene.add(dash);
   }
 
-  // Cross Avenues (West, Center Plaza, East)
+  // Cross Avenues (West, East)
   [-38, 48].forEach(xPos => {
-    const crossRoad = new THREE.Mesh(new THREE.BoxGeometry(12, 0.34, 150), roadMat);
-    crossRoad.position.set(xPos, 0.17, -5);
+    const crossRoad = new THREE.Mesh(new THREE.BoxGeometry(12, 0.34, 155), roadMat);
+    crossRoad.position.set(xPos, 0.17, -2);
     crossRoad.receiveShadow = true;
     scene.add(crossRoad);
   });
@@ -104,6 +111,129 @@ window.addEventListener('DOMContentLoaded', () => {
     vRoad.receiveShadow = true;
     scene.add(vRoad);
   });
+
+  // 4B. PERIMETER BOUNDARY WALLS & GRAND ENTRY GATE
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x64748B, roughness: 0.7 });
+  const wallCapMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
+  const gateArchMat = new THREE.MeshStandardMaterial({ color: 0x0F766E, roughness: 0.3 });
+
+  const buildBoundarySegment = (w, h, d, x, z) => {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+    wall.position.set(x, h / 2, z);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    scene.add(wall);
+
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.5, d + 0.4), wallCapMat);
+    cap.position.set(x, h + 0.25, z);
+    scene.add(cap);
+  };
+
+  // North, West, East Perimeter Walls & South Split Wall (leaving gap for Entry Gate)
+  buildBoundarySegment(360, 4.5, 2.2, 0, -90);     // North Boundary
+  buildBoundarySegment(2.2, 4.5, 205, -179, 12.5); // West Boundary
+  buildBoundarySegment(2.2, 4.5, 205, 179, 12.5);  // East Boundary
+  buildBoundarySegment(166, 4.5, 2.2, -96, 115);   // South-West Boundary
+  buildBoundarySegment(166, 4.5, 2.2, 96, 115);    // South-East Boundary
+
+  // Boundary Pillars along perimeter
+  for (let px = -175; px <= 175; px += 25) {
+    if (Math.abs(px) > 15) {
+      const pSouth = new THREE.Mesh(new THREE.BoxGeometry(3.2, 5.8, 3.2), wallCapMat);
+      pSouth.position.set(px, 2.9, 115);
+      pSouth.castShadow = true;
+      scene.add(pSouth);
+    }
+    const pNorth = new THREE.Mesh(new THREE.BoxGeometry(3.2, 5.8, 3.2), wallCapMat);
+    pNorth.position.set(px, 2.9, -90);
+    pNorth.castShadow = true;
+    scene.add(pNorth);
+  }
+
+  // Grand Security Gate Archway at South Entrance (x: 0, z: 115)
+  [-12, 12].forEach(gx => {
+    const gatePillar = new THREE.Mesh(new THREE.BoxGeometry(4.5, 11, 4.5), wallCapMat);
+    gatePillar.position.set(gx, 5.5, 115);
+    gatePillar.castShadow = true;
+    scene.add(gatePillar);
+  });
+  const gateCanopy = new THREE.Mesh(new THREE.BoxGeometry(30, 2.2, 6), gateArchMat);
+  gateCanopy.position.set(0, 11.5, 115);
+  gateCanopy.castShadow = true;
+  scene.add(gateCanopy);
+
+  // 4C. LANDSCAPED GARDENS, FOUNTAIN & PARK BENCHES
+  const createGardenPark = (cx, cz) => {
+    // Decorative Stone Circular Plaza
+    const plaza = new THREE.Mesh(
+      new THREE.CylinderGeometry(9, 9, 0.4, 24),
+      new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.7 })
+    );
+    plaza.position.set(cx, 0.35, cz);
+    plaza.receiveShadow = true;
+    scene.add(plaza);
+
+    // Glowing Water Fountain Basin
+    const basin = new THREE.Mesh(
+      new THREE.CylinderGeometry(5, 5.5, 1.2, 20),
+      new THREE.MeshStandardMaterial({ color: 0x0284C7, roughness: 0.1 })
+    );
+    basin.position.set(cx, 0.8, cz);
+    scene.add(basin);
+
+    const spout = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.8, 1.4, 3.2, 12),
+      new THREE.MeshStandardMaterial({ color: 0xF8FAFC })
+    );
+    spout.position.set(cx, 1.8, cz);
+    scene.add(spout);
+
+    // 4 Park Benches around Fountain
+    const benchMat = new THREE.MeshStandardMaterial({ color: 0x92400E, roughness: 0.8 });
+    [[-6.5, 0, Math.PI / 2], [6.5, 0, -Math.PI / 2], [0, -6.5, 0], [0, 6.5, Math.PI]].forEach(([bx, bz, rot]) => {
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.8, 1.1), benchMat);
+      bench.position.set(cx + bx, 0.7, cz + bz);
+      bench.rotation.y = rot;
+      bench.castShadow = true;
+      scene.add(bench);
+    });
+  };
+
+  // Add Central Gardens in South Botanical Belt & Wing Parks
+  createGardenPark(-65, 95);
+  createGardenPark(65, 95);
+  createGardenPark(-12, -12);
+
+  // 4D. STREET LIGHTS ALONG BOULEVARDS & AVENUES
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, metalness: 0.6, roughness: 0.3 });
+  const bulbMat = new THREE.MeshBasicMaterial({ color: 0xFEF08A });
+
+  const createStreetLight = (x, z, armDirX = 0, armDirZ = 1) => {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 8.5, 8), poleMat);
+    pole.position.set(x, 4.25, z);
+    pole.castShadow = true;
+    scene.add(pole);
+
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 2.2), poleMat);
+    arm.position.set(x + armDirX * 0.9, 8.4, z + armDirZ * 0.9);
+    if (armDirX !== 0) arm.rotation.y = Math.PI / 2;
+    scene.add(arm);
+
+    const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.4, 0.35, 10), bulbMat);
+    lamp.position.set(x + armDirX * 1.7, 8.2, z + armDirZ * 1.7);
+    scene.add(lamp);
+  };
+
+  // Main Boulevard Streetlights
+  for (let lx = -150; lx <= 150; lx += 25) {
+    createStreetLight(lx, 3.2, 0, 1);
+    createStreetLight(lx, 20.8, 0, -1);
+  }
+  // Cross Avenue Streetlights
+  for (let lz = -70; lz <= 65; lz += 28) {
+    createStreetLight(-44.5, lz, 1, 0);
+    createStreetLight(54.5, lz, -1, 0);
+  }
 
   // 5. Realistic Tower Structural Cores, Lobbies, Pillars & Rooftops
   const coreMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.5 });
@@ -118,26 +248,22 @@ window.addEventListener('DOMContentLoaded', () => {
     const baseX = isEastWing ? 55 + (col * 24) : -105 + (col * 24);
     const baseZ = -55 + (row * 28);
 
-    // Concrete Podium Base
     const podium = new THREE.Mesh(new THREE.BoxGeometry(14.5, 1.4, 14.5), pillarMat);
     podium.position.set(baseX, 0.7, baseZ);
     podium.castShadow = true;
     podium.receiveShadow = true;
     scene.add(podium);
 
-    // Ground Floor Glass Lobby
     const lobby = new THREE.Mesh(new THREE.BoxGeometry(11.5, 2.2, 11.5), glassLobbyMat);
     lobby.position.set(baseX, 1.4, baseZ);
     scene.add(lobby);
 
-    // Inner Elevator & Structural Spine (Eliminates floating skeleton gap!)
     const core = new THREE.Mesh(new THREE.BoxGeometry(9.6, 53, 9.6), coreMat);
     core.position.set(baseX, 27, baseZ);
     core.castShadow = true;
     core.receiveShadow = true;
     scene.add(core);
 
-    // 4 Corner Architectural Support Columns
     [[-5.8, -5.8], [5.8, -5.8], [-5.8, 5.8], [5.8, 5.8]].forEach(([dx, dz]) => {
       const colMesh = new THREE.Mesh(new THREE.BoxGeometry(1.1, 53.5, 1.1), pillarMat);
       colMesh.position.set(baseX + dx, 27.2, baseZ + dz);
@@ -145,7 +271,6 @@ window.addEventListener('DOMContentLoaded', () => {
       scene.add(colMesh);
     });
 
-    // Rooftop Crown & Mechanical Penthouse
     const roofCap = new THREE.Mesh(new THREE.BoxGeometry(13.2, 1.2, 13.2), pillarMat);
     roofCap.position.set(baseX, 54.0, baseZ);
     roofCap.castShadow = true;
@@ -158,7 +283,6 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // 6. Central Nexus Mall, Glass Skylight Atrium & Olympic Aquatic Complex
-  const mallGroup = new THREE.Group();
   const mallBody = new THREE.Mesh(
     new THREE.BoxGeometry(44, 12, 34),
     new THREE.MeshStandardMaterial({ color: 0x0F766E, roughness: 0.3 })
@@ -185,13 +309,11 @@ window.addEventListener('DOMContentLoaded', () => {
   mallBody.userData = mallData;
   scene.add(mallBody);
 
-  // Mall Glass Atrium Dome
   const atrium = new THREE.Mesh(new THREE.BoxGeometry(28, 3.5, 18), glassLobbyMat);
   atrium.position.set(-12, 13.7, -38);
   atrium.userData = mallData;
   scene.add(atrium);
 
-  // Pool Deck & Glowing Olympic Water
   const deck = new THREE.Mesh(
     new THREE.BoxGeometry(34, 0.8, 38),
     new THREE.MeshStandardMaterial({ color: 0xD6D3D1, roughness: 0.7 })
@@ -223,7 +345,7 @@ window.addEventListener('DOMContentLoaded', () => {
   pool.userData = poolData;
   scene.add(pool);
 
-  // 7. Procedural 3D Trees & Landscaping
+  // 7. Procedural 3D Trees & Park Landscaping
   const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350F, roughness: 0.9 });
   const leafMat = new THREE.MeshStandardMaterial({ color: 0x15803D, roughness: 0.6 });
   const createTree = (x, z, scale = 1) => {
@@ -238,12 +360,11 @@ window.addEventListener('DOMContentLoaded', () => {
     scene.add(crown);
   };
 
-  // Boulevard Trees along Main Road & Parks
-  for (let tx = -125; tx <= 125; tx += 18) {
+  for (let tx = -140; tx <= 140; tx += 18) {
     createTree(tx, 2.5, 0.95);
     createTree(tx, 20.5, 0.95);
+    if (Math.abs(tx) > 20) createTree(tx, 104, 1.05); // Botanical Garden Trees
   }
-  // Trees around Central Mall & Pool
   [-32, -20, 0, 12, 48].forEach(tx => createTree(tx, -16, 1.1));
   [-58, -45, -30].forEach(tz => {
     createTree(-44, tz, 1.0);
@@ -265,7 +386,8 @@ window.addEventListener('DOMContentLoaded', () => {
       opacity: 1
     });
 
-    const mesh = new THREE.Mesh(prop.type === 'Flat' ? flatGeo : villaGeo, mat);
+    const isVilla = prop.type === 'Mansion' || prop.type === 'Villa';
+    const mesh = new THREE.Mesh(isVilla ? villaGeo : flatGeo, mat);
     mesh.position.set(prop.coordinates.x, prop.coordinates.y, prop.coordinates.z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
@@ -275,8 +397,8 @@ window.addEventListener('DOMContentLoaded', () => {
     interactiveObjects.push(mesh);
     sceneMeshes[prop.id] = mesh;
 
-    // Add Pitched Architectural Roofs & Private Lawns to Mansions
-    if (prop.type === 'Mansion') {
+    // Add Pitched Architectural Roofs & Private Lawns to Mansions/Villas
+    if (isVilla) {
       const roof = new THREE.Mesh(villaRoofGeo, villaRoofMat);
       roof.position.set(prop.coordinates.x, prop.coordinates.y + 4.2, prop.coordinates.z);
       roof.rotation.y = Math.PI / 4;
@@ -286,7 +408,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 9. Raycasting for Hover Tooltips & Click Modals
+  // 9. Raycasting for Hover Tooltips & Click Modals (With Live State Lookup!)
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
   const tooltip = document.getElementById('unit-tooltip');
@@ -310,7 +432,7 @@ window.addEventListener('DOMContentLoaded', () => {
       const data = hits[0].object.userData;
       if (data.id === 'MALL' || data.id === 'POOL') {
         openNexusShowcaseModal(data);
-      } else if (data.id) {
+      } else if (data.id && typeof openPropertyModal === 'function') {
         openPropertyModal(data.id);
       }
     }
@@ -325,16 +447,23 @@ window.addEventListener('DOMContentLoaded', () => {
     const hits = raycaster.intersectObjects(interactiveObjects);
 
     if (hits.length > 0) {
-      const data = hits[0].object.userData;
+      const rawData = hits[0].object.userData;
+      // Always pull the latest live status from appState.properties
+      const liveData = (rawData.id && rawData.id !== 'MALL' && rawData.id !== 'POOL')
+        ? (appState.properties.find(p => p.id === rawData.id) || rawData)
+        : rawData;
+
       renderer.domElement.style.cursor = 'pointer';
-      document.getElementById('tt-type').textContent = data.type === 'Amenity' ? 'Central Nexus Facility' : `${data.type} · ${data.tower}`;
-      document.getElementById('tt-title').textContent = data.title;
-      document.getElementById('tt-price').textContent = data.rent ? `₹${data.rent.toLocaleString('en-IN')}/mo` : 'Click to View Real Photos & Book';
-      document.getElementById('tt-status').textContent = `Status: ${data.status}`;
-      tooltip.classList.remove('hidden');
+      if (tooltip) {
+        document.getElementById('tt-type').textContent = liveData.type === 'Amenity' ? 'Central Nexus Facility' : `${liveData.type} · ${liveData.tower}`;
+        document.getElementById('tt-title').textContent = liveData.title || liveData.name || liveData.id;
+        document.getElementById('tt-price').textContent = liveData.rent ? `₹${liveData.rent.toLocaleString('en-IN')}/mo` : 'Click to View Details';
+        document.getElementById('tt-status').textContent = `Status: ${liveData.status}`;
+        tooltip.classList.remove('hidden');
+      }
     } else {
       renderer.domElement.style.cursor = 'grab';
-      tooltip.classList.add('hidden');
+      if (tooltip) tooltip.classList.add('hidden');
     }
   });
 
@@ -357,7 +486,7 @@ window.addEventListener('DOMContentLoaded', () => {
   animate();
 });
 
-// Self-Contained Photo Gallery Modal for Central Nexus Mall & Pool (Requires ZERO changes to index.html)
+// Self-Contained Photo Gallery Modal for Central Nexus Mall & Pool
 function openNexusShowcaseModal(data) {
   let modal = document.getElementById('nexus-gallery-modal');
   if (!modal) {
@@ -405,15 +534,17 @@ function openNexusShowcaseModal(data) {
 }
 
 function getStatusHex(status) {
-  if (status === 'Available') return 0x059669; // Emerald-600
-  if (status === 'Pending') return 0xD97706;   // Amber-600
-  return 0x94A3B8;                             // Slate-400
+  if (status === 'Available') return 0x059669; // Emerald-600 (Green)
+  if (status === 'Pending') return 0xD97706;   // Amber-600 (Orange)
+  return 0x94A3B8;                             // Slate-400 (Occupied / Grey)
 }
 
 window.sync3DSceneWithState = (filterType = 'All', filterStatus = 'All') => {
+  if (!window.appState || !appState.properties) return;
   appState.properties.forEach(prop => {
     const mesh = sceneMeshes[prop.id];
     if (!mesh) return;
+    mesh.userData = prop; // Re-bind updated Supabase property reference!
     mesh.material.color.setHex(getStatusHex(prop.status));
 
     const matchType = filterType === 'All' || prop.type === filterType;
