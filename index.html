@@ -20,6 +20,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-[#F8FAFC] text-[#0F172A] min-h-screen flex flex-col antialiased">
 
@@ -488,40 +489,83 @@
     const STORAGE_KEY_USER = 'zenith_enclave_user_v1';
     const STORAGE_KEY_RESIDENTS = 'zenith_enclave_residents_v1';
 
-    // Load Persistent State from LocalStorage
-    function loadPersistedState() {
-      const savedState = localStorage.getItem(STORAGE_KEY_STATE);
-      if (savedState) {
-        try {
-          const parsed = JSON.parse(savedState);
-          if (parsed.properties && parsed.properties.length === 260) {
-            appState.properties = parsed.properties;
-            appState.tickets = parsed.tickets || appState.tickets;
-            appState.bookings = parsed.bookings || appState.bookings;
-            appState.bulletins = parsed.bulletins || appState.bulletins;
-          }
-        } catch (e) { console.error(e); }
+    // 1. Initialize Supabase Client
+    const SUPABASE_URL = 'https://jomqdpxsurriykpbtido.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvbXFkcHhzdXJyaXlrcGJ0aWRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NTM2MjgsImV4cCI6MjEwODQyOTYyOH0.EbXOu-4fp9ON2aFuZi_dC64Xpdi5pVAr4o5SFDtTOQA';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const STATE_ROW_ID = 'zenith_global_state';
+
+    // 2. Load from Supabase on startup & listen for live changes
+    async function loadPersistedState() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('township_state')
+          .select('state_data')
+          .eq('id', STATE_ROW_ID)
+          .maybeSingle();
+
+        if (data && data.state_data) {
+          const parsed = data.state_data;
+          if (parsed.properties) appState.properties = parsed.properties;
+          if (parsed.tickets) appState.tickets = parsed.tickets;
+          if (parsed.bookings) appState.bookings = parsed.bookings;
+          if (parsed.bulletins) appState.bulletins = parsed.bulletins;
+        }
+      } catch (err) {
+        console.error('Error fetching Supabase state:', err);
       }
 
-      const residents = JSON.parse(localStorage.getItem(STORAGE_KEY_RESIDENTS) || '[]');
-      document.getElementById('reg-count-badge').textContent = `${residents.length} Registered Resident(s)`;
+      // Refresh your UI with loaded data
+      if (typeof updateKPIs === 'function') updateKPIs();
+      if (typeof renderDirectory === 'function') renderDirectory();
+      if (typeof renderBulletins === 'function') renderBulletins();
+      if (typeof renderTickets === 'function') renderTickets();
+      if (typeof renderBookings === 'function') renderBookings();
+      if (typeof apply3DFilters === 'function') apply3DFilters();
 
+      // Restore local login session if present
       const activeUser = localStorage.getItem(STORAGE_KEY_USER);
-      if (activeUser) {
-        const userObj = JSON.parse(activeUser);
-        applyLoggedInSession(userObj);
+      if (activeUser && typeof applyLoggedInSession === 'function') {
+        applyLoggedInSession(JSON.parse(activeUser));
       }
+
+      // Real-time listener: updates instantly across devices
+      supabaseClient
+        .channel('public:township_state')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'township_state' }, payload => {
+          if (payload.new && payload.new.state_data) {
+            const remote = payload.new.state_data;
+            if (remote.properties) appState.properties = remote.properties;
+            if (remote.tickets) appState.tickets = remote.tickets;
+            if (remote.bookings) appState.bookings = remote.bookings;
+            if (remote.bulletins) appState.bulletins = remote.bulletins;
+
+            if (typeof updateKPIs === 'function') updateKPIs();
+            if (typeof renderDirectory === 'function') renderDirectory();
+            if (typeof renderBulletins === 'function') renderBulletins();
+            if (typeof renderTickets === 'function') renderTickets();
+            if (typeof renderBookings === 'function') renderBookings();
+            if (typeof apply3DFilters === 'function') apply3DFilters();
+          }
+        })
+        .subscribe();
     }
 
-    function saveStateToStorage() {
-      localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify({
+    // 3. Save to Supabase
+    async function saveStateToStorage() {
+      const payload = {
         properties: appState.properties,
         tickets: appState.tickets,
         bookings: appState.bookings,
         bulletins: appState.bulletins
-      }));
-    }
+      };
 
+      const { error } = await supabaseClient
+        .from('township_state')
+        .upsert({ id: STATE_ROW_ID, state_data: payload, updated_at: new Date().toISOString() });
+
+      if (error) console.error('Error syncing state to Supabase:', error);
+    }
     // Auth Gate Tabs
     function setAuthTab(mode) {
       const resBox = document.getElementById('auth-resident-box');
