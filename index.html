@@ -73,30 +73,58 @@
           </button>
         </div>
 
-        <!-- RESIDENT PHONE + OTP FLOW -->
+       <!-- RESIDENT PHONE + OTP FLOW -->
         <div id="auth-resident-box" class="space-y-4">
-          <!-- Step 1: Phone Details -->
+          <!-- Step 1: Cascading Unit Selection & Phone Details -->
           <div id="otp-step-1" class="space-y-3.5">
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
-              <input type="text" id="res-name" placeholder="e.g. Aarav Sharma" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+              <input type="text" id="res-name" placeholder="e.g. Aarav Sharma" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700 bg-white">
             </div>
+
+            <!-- Property Type Selector -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Property Type</label>
+              <select id="reg-category" onchange="handleCategoryChange()" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:border-brand-700">
+                <option value="">-- Choose Category --</option>
+                <option value="Tower">High-Rise Tower Flat</option>
+                <option value="Villa">Luxury Villa</option>
+              </select>
+            </div>
+
+            <!-- Tower Selector (Hidden initially) -->
+            <div id="tower-group" class="hidden">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Select Tower</label>
+              <select id="reg-tower" onchange="populateTowerFlats()" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:border-brand-700">
+                <option value="">-- Choose Tower --</option>
+                <option value="Tower A">Tower A</option>
+                <option value="Tower B">Tower B</option>
+                <option value="Tower C">Tower C</option>
+                <option value="Tower D">Tower D</option>
+              </select>
+            </div>
+
+            <!-- Flat / Villa Unit Selector -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Select Flat / Villa</label>
+              <select id="reg-unit" disabled class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:border-brand-700">
+                <option value="">-- Select Type First --</option>
+              </select>
+              </div>
+
+            <!-- Mobile Number -->
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">Mobile Number (10 Digits)</label>
               <div class="flex">
                 <span class="inline-flex items-center px-3 text-xs font-semibold text-slate-600 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg">+91</span>
-                <input type="tel" id="res-phone" maxlength="10" placeholder="9876543210" class="w-full text-xs border border-slate-300 rounded-r-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+                <input type="tel" id="res-phone" maxlength="10" placeholder="9876543210" class="w-full text-xs border border-slate-300 rounded-r-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700 bg-white">
               </div>
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Unit / Flat Reference (Optional)</label>
-              <input type="text" id="res-unit" placeholder="e.g. Tower B - Flat 14" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
-            </div>
-            <button onclick="sendResidentOTP()" class="w-full bg-brand-700 hover:bg-brand-900 text-white font-semibold text-xs py-3 rounded-lg transition">
-              Send 6-Digit OTP
+
+            <button type="button" onclick="handleResidentRegistration()" class="w-full bg-brand-700 hover:bg-brand-900 text-white font-semibold text-xs py-3 rounded-lg transition shadow-sm">
+              Confirm & Bind Unit
             </button>
           </div>
-
           <!-- Step 2: Verify OTP -->
           <div id="otp-step-2" class="space-y-4 hidden">
             <div class="p-3 rounded-lg bg-brand-50 border border-brand-100 text-xs text-brand-900">
@@ -565,6 +593,114 @@
         .upsert({ id: STATE_ROW_ID, state_data: payload, updated_at: new Date().toISOString() });
 
       if (error) console.error('Error syncing state to Supabase:', error);
+    }
+    // 1. Dropdown handler for Category (Tower vs Villa)
+    function handleCategoryChange() {
+      const cat = document.getElementById('reg-category').value;
+      const towerGroup = document.getElementById('tower-group');
+      const unitSelect = document.getElementById('reg-unit');
+      unitSelect.innerHTML = '<option value="">-- Choose Unit --</option>';
+
+      if (cat === 'Tower') {
+        towerGroup.classList.remove('hidden');
+        unitSelect.disabled = true;
+      } else if (cat === 'Villa') {
+        towerGroup.classList.add('hidden');
+        unitSelect.disabled = false;
+        
+        // Populate Villas
+        const villas = appState.properties.filter(p => p.type === 'Villa' || (p.id && p.id.startsWith('V')));
+        villas.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = `${v.id} - ${v.name || 'Signature Villa'} (${v.status || 'Available'})`;
+          unitSelect.appendChild(opt);
+        });
+      } else {
+        towerGroup.classList.add('hidden');
+        unitSelect.disabled = true;
+      }
+    }
+
+    // 2. Dropdown handler for Tower selection
+    function populateTowerFlats() {
+      const tower = document.getElementById('reg-tower').value;
+      const unitSelect = document.getElementById('reg-unit');
+      unitSelect.innerHTML = '<option value="">-- Choose Flat --</option>';
+
+      if (!tower) {
+        unitSelect.disabled = true;
+        return;
+      }
+
+      unitSelect.disabled = false;
+      const flats = appState.properties.filter(p => p.tower === tower);
+      flats.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.textContent = `${f.id} (Floor ${f.floor || 'N/A'}) - ${f.status || 'Available'}`;
+        unitSelect.appendChild(opt);
+      });
+    }
+
+    // 3. Supabase registration & permanent phone-to-unit binding
+    async function handleResidentRegistration() {
+      const name = (document.getElementById('res-name').value || '').trim() || 'Resident';
+      const unitId = document.getElementById('reg-unit').value;
+      const phone = (document.getElementById('res-phone').value || '').trim();
+
+      if (!unitId) {
+        alert('Please choose your property unit from the dropdown.');
+        return;
+      }
+      if (!phone || phone.length !== 10 || isNaN(phone)) {
+        alert('Please enter a valid 10-digit mobile number.');
+        return;
+      }
+
+      // Check if unit is already claimed in Supabase
+      const { data: existingUnit, error: fetchErr } = await supabaseClient
+        .from('residents')
+        .select('*')
+        .eq('property_id', unitId)
+        .maybeSingle();
+
+      if (existingUnit && existingUnit.phone !== phone) {
+        alert(`Unit ${unitId} is already registered to phone +91 ${existingUnit.phone}.`);
+        return;
+      }
+
+      // Save registration to Supabase 'residents' table
+      const { error: insErr } = await supabaseClient
+        .from('residents')
+        .upsert({ property_id: unitId, phone: phone }, { onConflict: 'property_id' });
+
+      if (insErr) {
+        alert('Supabase registration error: ' + insErr.message);
+        return;
+      }
+
+      // Update unit in appState
+      const target = appState.properties.find(p => p.id === unitId);
+      if (target) {
+        target.status = 'Occupied';
+        target.tenantCount = 1;
+        target.residentName = name;
+        target.residentPhone = phone;
+      }
+
+      // Broadcast changes to all devices via Supabase
+      await saveStateToStorage();
+
+      // Store local login session
+      const userSession = { role: 'resident', name: name, phone: phone, propertyId: unitId };
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(userSession));
+      if (typeof applyLoggedInSession === 'function') applyLoggedInSession(userSession);
+
+      const authGate = document.getElementById('auth-gate-modal');
+      if (authGate) authGate.classList.add('hidden');
+
+      alert(`Unit ${unitId} is successfully bound to +91 ${phone}!`);
     }
     // Auth Gate Tabs
     function setAuthTab(mode) {
