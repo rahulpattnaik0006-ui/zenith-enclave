@@ -550,14 +550,16 @@
       if (typeof renderTickets === 'function') renderTickets();
       if (typeof renderBookings === 'function') renderBookings();
       if (typeof apply3DFilters === 'function') apply3DFilters();
+      if (typeof apply3DFilters === 'function') apply3DFilters();
+if (typeof window.sync3DSceneWithState === 'function') window.sync3DSceneWithState();
 
       // Restore local login session if present
       const activeUser = localStorage.getItem(STORAGE_KEY_USER);
       if (activeUser && typeof applyLoggedInSession === 'function') {
         applyLoggedInSession(JSON.parse(activeUser));
       }
-
-      // Real-time listener: updates instantly across devices
+      
+// Real-time listener: updates instantly across devices
       supabaseClient
         .channel('public:township_state')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'township_state' }, payload => {
@@ -574,6 +576,7 @@
             if (typeof renderTickets === 'function') renderTickets();
             if (typeof renderBookings === 'function') renderBookings();
             if (typeof apply3DFilters === 'function') apply3DFilters();
+            if (typeof window.sync3DSceneWithState === 'function') window.sync3DSceneWithState();
           }
         })
         .subscribe();
