@@ -133,11 +133,10 @@
               </div>
             </div>
 
-            <button onclick="requestResidentOTP()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer mt-2">
+            <button type="button" onclick="requestResidentOTP()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer mt-2">
               Send Verification OTP →
             </button>
           </div>
-
           <!-- Step 2: OTP Verification Box (Hidden Initially) -->
           <div id="otp-step-2" class="space-y-4 hidden">
             <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
@@ -685,31 +684,51 @@ function setAuthTab(mode) {
 }
 
 function requestResidentOTP() {
-  const unitEl = document.getElementById('reg-unit');
-  const unit = unitEl ? unitEl.value.trim() : '';
-  const nameEl = document.getElementById('reg-name');
-  const name = nameEl ? nameEl.value.trim() : '';
-  const phoneEl = document.getElementById('reg-phone');
-  const phone = phoneEl ? phoneEl.value.trim() : '';
+  try {
+    const unitEl = document.getElementById('reg-unit') || document.getElementById('reg-unit-direct');
+    const nameEl = document.getElementById('reg-name');
+    const phoneEl = document.getElementById('reg-phone');
 
-  if (!unit) {
-    alert('Please enter or click a Flat or Villa number.');
-    return;
-  }
-  if (!name) {
-    alert('Please enter your name.');
-    return;
-  }
-  if (!phone || phone.length < 10) {
-    alert('Please enter a valid 10-digit mobile number.');
-    return;
-  }
+    const unit = unitEl ? unitEl.value.trim() : '';
+    const name = nameEl ? nameEl.value.trim() : '';
+    const phone = phoneEl ? phoneEl.value.trim() : '';
 
-  const displayEl = document.getElementById('otp-display-phone');
-  if (displayEl) displayEl.textContent = `Mobile: +91 ${phone} · Unit: ${unit}`;
-  
-  document.getElementById('otp-step-1').classList.add('hidden');
-  document.getElementById('otp-step-2').classList.remove('hidden');
+    if (!unit) {
+      alert('Please enter or select a Flat / Villa number.');
+      if (unitEl) unitEl.focus();
+      return;
+    }
+    if (!name) {
+      alert('Please enter your name.');
+      if (nameEl) nameEl.focus();
+      return;
+    }
+    if (!phone || phone.length < 10) {
+      alert('Please enter a valid 10-digit mobile number.');
+      if (phoneEl) phoneEl.focus();
+      return;
+    }
+
+    // Update phone display text
+    const displayEl = document.getElementById('otp-display-phone');
+    if (displayEl) {
+      displayEl.textContent = `Mobile: +91 ${phone} · Unit: ${unit}`;
+    }
+
+    // Transition steps
+    const step1 = document.getElementById('otp-step-1');
+    const step2 = document.getElementById('otp-step-2');
+
+    if (step1 && step2) {
+      step1.classList.add('hidden');
+      step2.classList.remove('hidden');
+    } else {
+      console.error('OTP step elements not found: otp-step-1 or otp-step-2');
+    }
+  } catch (err) {
+    console.error('Error in requestResidentOTP:', err);
+    alert('Something went wrong. Please check your browser console (F12).');
+  }
 }
 function backToStep1() {
   document.getElementById('otp-step-2').classList.add('hidden');
