@@ -1106,11 +1106,146 @@ if (typeof window.sync3DSceneWithState === 'function') window.sync3DSceneWithSta
       updateKPIs();
       renderDirectory();
       runRoommateMatcher();
-      renderBulletins();
+     renderBulletins();
       renderBookings();
       renderTickets();
       setTimeout(() => apply3DFilters(), 200);
     });
+
+    // --- ZENITH AI ASSISTANT CONTROLLER ---
+    const OPENAI_API_KEY = "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";
+
+    function toggleAIChat() {
+      const card = document.getElementById('ai-chat-card');
+      if (card) card.classList.toggle('hidden');
+    }
+
+    async function handleAISubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('ai-prompt-input');
+      const box = document.getElementById('ai-messages');
+      const sendBtn = document.getElementById('ai-send-btn');
+      const userText = (input.value || '').trim();
+
+      if (!userText) return;
+      input.value = '';
+
+      // User Message Bubble
+      box.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-brand-700 text-white rounded-xl rounded-tr-xs px-3 py-2 max-w-[80%] shadow-2xs">${userText}</div>
+        </div>
+      `;
+      box.scrollTop = box.scrollHeight;
+
+      // Thinking Indicator
+      const loadingId = 'ai-loading-' + Date.now();
+      box.innerHTML += `
+        <div id="${loadingId}" class="bg-white border border-slate-200 text-slate-500 rounded-xl rounded-tl-xs p-3 shadow-2xs flex items-center gap-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-slate-400 animate-bounce"></span>
+          <span>Zenith AI is thinking...</span>
+        </div>
+      `;
+      box.scrollTop = box.scrollHeight;
+      sendBtn.disabled = true;
+
+      // Extract Context from Live appState
+      const totalProps = (window.appState && appState.properties) ? appState.properties.length : 260;
+      const availProps = (window.appState && appState.properties) ? appState.properties.filter(p => p.status === 'Available').length : 0;
+      
+      const systemPrompt = `You are the virtual concierge for 'Zenith Enclave', a premium smart township.
+Township Stats:
+- Total Units: ${totalProps} (240 High-Rise Flats, 20 Luxury Mansions/Villas).
+- Available Vacant Units: ${availProps}.
+- Key Facilities: Central Nexus Mall (VR Gaming, Organic Mart, Coworking) and Olympic Aquatic Club (8 heated lanes).
+- Monthly Leases: Flats from ~₹42,000/mo; Mansions/Villas from ~₹1,45,000/mo.
+Answer queries politely, accurately, and concisely in 2 to 3 sentences.`;
+
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userText }
+            ],
+            temperature: 0.6,
+            max_tokens: 150
+          })
+        });
+
+        const data = await res.json();
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+
+        if (data.choices && data.choices[0]) {
+          const reply = data.choices[0].message.content.replace(/\n/g, '<br>');
+          box.innerHTML += `
+            <div class="bg-white border border-slate-200 text-slate-800 rounded-xl rounded-tl-xs p-3 shadow-2xs">
+              ${reply}
+            </div>
+          `;
+        } else {
+          box.innerHTML += `
+            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl rounded-tl-xs p-3 shadow-2xs">
+              ${data.error ? data.error.message : 'Error connecting to OpenAI. Please check your API quota.'}
+            </div>
+          `;
+        }
+      } catch (err) {
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+        box.innerHTML += `
+          <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl rounded-tl-xs p-3 shadow-2xs">
+            Network error connecting to AI concierge.
+          </div>
+        `;
+      } finally {
+        sendBtn.disabled = false;
+        box.scrollTop = box.scrollHeight;
+      }
+    }
   </script>
+
+  <!-- FLOATING AI ASSISTANT -->
+  <div id="ai-assistant-container" class="fixed bottom-5 right-5 z-50 flex flex-col items-end">
+    <!-- Chat Window -->
+    <div id="ai-chat-card" class="hidden mb-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <!-- Header -->
+      <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div>
+            <h4 class="text-xs font-bold tracking-wide">Zenith AI Assistant</h4>
+            <p class="text-[10px] text-slate-400">Powered by OpenAI</p>
+          </div>
+        </div>
+        <button onclick="toggleAIChat()" class="text-slate-400 hover:text-white text-sm font-bold">✕</button>
+      </div>
+
+      <!-- Message Stream -->
+      <div id="ai-messages" class="p-3.5 space-y-2.5 h-72 overflow-y-auto bg-slate-50 text-xs">
+        <div class="bg-white border border-slate-200 text-slate-700 rounded-xl rounded-tl-xs p-3 shadow-2xs">
+          👋 Hi! I am the <strong>Zenith Enclave AI Concierge</strong>. Ask me anything about flats, luxury villas, amenities, or resident services!
+        </div>
+      </div>
+
+      <!-- Input Bar -->
+      <form onsubmit="handleAISubmit(event)" class="p-2.5 bg-white border-t border-slate-200 flex gap-1.5">
+        <input id="ai-prompt-input" type="text" placeholder="Ask about rents, amenities, status..." class="flex-1 text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-brand-700">
+        <button id="ai-send-btn" type="submit" class="bg-brand-700 hover:bg-brand-900 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition">Send</button>
+      </form>
+    </div>
+
+    <!-- Trigger Button -->
+    <button onclick="toggleAIChat()" class="bg-brand-700 hover:bg-brand-900 text-white rounded-full px-4 py-3 shadow-xl flex items-center gap-2 text-xs font-bold transition transform hover:scale-105 cursor-pointer border-2 border-white">
+      <span>✨ Ask Zenith AI</span>
+    </button>
+  </div>
 </body>
 </html>
