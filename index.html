@@ -1205,59 +1205,73 @@ Township Data:
 - Monthly Leases: Flats ~₹42,000/mo; Luxury Mansions/Villas ~₹1,45,000/mo.
 Answer politely, accurately, and concisely in 2 to 3 sentences.`;
 
-      try {
-const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": GEMINI_API_KEY
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  { text: `${systemPrompt}\n\nResident Question: ${userText}` }
-                ]
+      // Candidate models tried sequentially in case of high demand
+      const candidateModels = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-3.8-flash"
+      ];
+
+      let replyText = null;
+      let lastErrorMessage = "";
+
+      for (const modelName of candidateModels) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": GEMINI_API_KEY
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    { text: `${systemPrompt}\n\nResident Question: ${userText}` }
+                  ]
+                }
+              ],
+              generationConfig: {
+                maxOutputTokens: 180,
+                temperature: 0.6
               }
-            ],
-            generationConfig: {
-              maxOutputTokens: 180,
-              temperature: 0.6
-            }
-          })
-        });
+            })
+          });
 
-        const data = await res.json();
-        const loadingEl = document.getElementById(loadingId);
-        if (loadingEl) loadingEl.remove();
+          const data = await res.json();
 
-        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-          const reply = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
-          box.innerHTML += `
-            <div class="bg-white border border-slate-200 text-slate-800 rounded-xl rounded-tl-xs p-3 shadow-2xs">
-              ${reply}
-            </div>
-          `;
-        } else {
-          box.innerHTML += `
-            <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl rounded-tl-xs p-3 shadow-2xs">
-              ${data.error ? data.error.message : 'Unable to complete response. Please check API key status.'}
-            </div>
-          `;
+          if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            replyText = data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>');
+            break; // Success: exit the fallback loop
+          } else if (data.error) {
+            lastErrorMessage = data.error.message || JSON.stringify(data.error);
+            console.warn(`Model ${modelName} returned error:`, lastErrorMessage);
+          }
+        } catch (netErr) {
+          console.warn(`Network failure querying ${modelName}:`, netErr);
         }
-      } catch (err) {
-        const loadingEl = document.getElementById(loadingId);
-        if (loadingEl) loadingEl.remove();
-        console.error("Gemini Error:", err);
+      }
+
+      const loadingEl = document.getElementById(loadingId);
+      if (loadingEl) loadingEl.remove();
+
+      if (replyText) {
         box.innerHTML += `
-          <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl rounded-tl-xs p-3 shadow-2xs">
-            Network error connecting to Gemini AI.
+          <div class="bg-white border border-slate-200 text-slate-800 rounded-xl rounded-tl-xs p-3 shadow-2xs">
+            ${replyText}
           </div>
         `;
-      } finally {
-        sendBtn.disabled = false;
-        box.scrollTop = box.scrollHeight;
+      } else {
+        box.innerHTML += `
+          <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl rounded-tl-xs p-3 shadow-2xs">
+            Zenith AI is temporarily experiencing heavy traffic. Please wait a moment and try again. (${lastErrorMessage})
+          </div>
+        `;
       }
+
+      sendBtn.disabled = false;
+      box.scrollTop = box.scrollHeight;
     }
     window.addEventListener('DOMContentLoaded', () => {
       loadPersistedState();
