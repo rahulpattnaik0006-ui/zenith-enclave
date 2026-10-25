@@ -99,15 +99,24 @@
               </select>
             </div>
 
-            <!-- Flat / Unit Dropdown -->
+            <!-- Direct Unit Input & Quick Selector -->
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Flat / Unit Number</label>
-                <span id="unit-count-badge" class="text-[10px] text-slate-400">Select Tower First</span>
+                <span class="text-[10px] text-teal-600 font-semibold">Type or click below</span>
               </div>
-              <select id="reg-unit" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-brand-600 focus:bg-white transition">
-                <option value="">-- Select Flat / Villa --</option>
-              </select>
+              <input id="reg-unit" type="text" placeholder="e.g. 101, T1-101, or V-01" class="w-full text-xs font-bold border border-slate-300 rounded-lg p-2.5 bg-white text-slate-900 uppercase focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition" />
+              
+              <!-- Quick Select Buttons -->
+              <div class="mt-2 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 border border-slate-100 rounded-lg bg-slate-50">
+                <button type="button" onclick="setQuickUnit('T1-101')" class="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded hover:bg-teal-50 hover:border-teal-500 font-semibold text-slate-700">T1-101</button>
+                <button type="button" onclick="setQuickUnit('T1-102')" class="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded hover:bg-teal-50 hover:border-teal-500 font-semibold text-slate-700">T1-102</button>
+                <button type="button" onclick="setQuickUnit('T2-201')" class="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded hover:bg-teal-50 hover:border-teal-500 font-semibold text-slate-700">T2-201</button>
+                <button type="button" onclick="setQuickUnit('T3-301')" class="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded hover:bg-teal-50 hover:border-teal-500 font-semibold text-slate-700">T3-301</button>
+                <button type="button" onclick="setQuickUnit('T4-401')" class="text-[10px] bg-white border border-slate-200 px-2 py-1 rounded hover:bg-teal-50 hover:border-teal-500 font-semibold text-slate-700">T4-401</button>
+                <button type="button" onclick="setQuickUnit('V-01')" class="text-[10px] bg-amber-50 border border-amber-200 px-2 py-1 rounded hover:bg-amber-100 font-bold text-amber-800">Villa V-01</button>
+                <button type="button" onclick="setQuickUnit('V-02')" class="text-[10px] bg-amber-50 border border-amber-200 px-2 py-1 rounded hover:bg-amber-100 font-bold text-amber-800">Villa V-02</button>
+              </div>
             </div>
 
             <!-- Resident Name & Phone -->
@@ -553,7 +562,14 @@
     const STORAGE_KEY_USER = 'zenith_enclave_user_v1';
     const STORAGE_KEY_RESIDENTS = 'zenith_enclave_residents_v1';
 // --- AUTHENTICATION & CASCADING UNIT DROPDOWN CONTROLLER ---
-
+function setQuickUnit(unitId) {
+  const input = document.getElementById('reg-unit');
+  if (input) {
+    input.value = unitId;
+    input.classList.add('bg-teal-50');
+    setTimeout(() => input.classList.remove('bg-teal-50'), 300);
+  }
+}
 // Fallback unit database for all 12 Towers + 20 Villas
 const MOCK_TOWERS = {
   'Tower 1': Array.from({ length: 20 }, (_, i) => `T1-${101 + i}`),
@@ -669,13 +685,15 @@ function setAuthTab(mode) {
 }
 
 function requestResidentOTP() {
-  const tower = document.getElementById('reg-tower').value;
-  const unit = document.getElementById('reg-unit').value;
-  const name = document.getElementById('reg-name').value.trim();
-  const phone = document.getElementById('reg-phone').value.trim();
+  const unitEl = document.getElementById('reg-unit');
+  const unit = unitEl ? unitEl.value.trim() : '';
+  const nameEl = document.getElementById('reg-name');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const phoneEl = document.getElementById('reg-phone');
+  const phone = phoneEl ? phoneEl.value.trim() : '';
 
-  if (!tower || !unit) {
-    alert('Please select both your Tower and Flat/Unit number.');
+  if (!unit) {
+    alert('Please enter or click a Flat or Villa number.');
     return;
   }
   if (!name) {
@@ -687,11 +705,12 @@ function requestResidentOTP() {
     return;
   }
 
-  document.getElementById('otp-display-phone').textContent = `Mobile: +91 ${phone} · Unit: ${unit}`;
+  const displayEl = document.getElementById('otp-display-phone');
+  if (displayEl) displayEl.textContent = `Mobile: +91 ${phone} · Unit: ${unit}`;
+  
   document.getElementById('otp-step-1').classList.add('hidden');
   document.getElementById('otp-step-2').classList.remove('hidden');
 }
-
 function backToStep1() {
   document.getElementById('otp-step-2').classList.add('hidden');
   document.getElementById('otp-step-1').classList.remove('hidden');
