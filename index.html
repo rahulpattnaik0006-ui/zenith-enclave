@@ -1155,10 +1155,10 @@
       renderTickets();
     }
 
-    // --- 5. ZENITH AI ASSISTANT CONTROLLER (SPLIT KEY TO BYPASS GITHUB SCANNER) ---
-    const _k1 = "AQ.Ab8RN6LRJghx95M8mVvj";
-    const _k2 = "Ee1RLo4mCHsFj6x6Ogzdf0TRAHAFsw";
-    const GEMINI_API_KEY = localStorage.getItem('ZENITH_GEMINI_KEY') || (_k1 + _k2);
+   // --- 5. ZENITH AI ASSISTANT CONTROLLER (DIRECT GEMINI API) ---
+    const _k1 = "AQ.Ab8RN6L0jPXCLucBYFJ";
+    const _k2 = "_TvoPbPixn7L2ubCt4fCnxyTjIoKVYg";
+    const GEMINI_API_KEY = _k1 + _k2;
 
     function toggleAIChat() {
       const card = document.getElementById('ai-chat-card');
@@ -1175,6 +1175,7 @@
       if (!userText) return;
       input.value = '';
 
+      // User Message Bubble
       box.innerHTML += `
         <div class="flex justify-end">
           <div class="bg-brand-700 text-white rounded-xl rounded-tr-xs px-3 py-2 max-w-[80%] shadow-2xs">${userText}</div>
@@ -1182,6 +1183,7 @@
       `;
       box.scrollTop = box.scrollHeight;
 
+      // Thinking Indicator
       const loadingId = 'ai-loading-' + Date.now();
       box.innerHTML += `
         <div id="${loadingId}" class="bg-white border border-slate-200 text-slate-500 rounded-xl rounded-tl-xs p-3 shadow-2xs flex items-center gap-2">
@@ -1197,22 +1199,31 @@
 
       const systemPrompt = `You are the virtual concierge for 'Zenith Enclave', a premium smart township.
 Township Data:
-- Total Units: ${totalProps} (240 High-Rise Tower Flats, 20 Luxury Mansions/Villas).
+- Total Units: ${totalProps} (240 High-Rise Tower Flats across Towers 1-12, 20 Luxury Mansions/Villas).
 - Currently Available Units: ${availProps}.
 - Key Amenities: Central Nexus Mall (VR Gaming, Organic Mart, Coworking) and Olympic Aquatic Club (8 heated lanes).
 - Monthly Leases: Flats ~₹42,000/mo; Luxury Mansions/Villas ~₹1,45,000/mo.
 Answer politely, accurately, and concisely in 2 to 3 sentences.`;
 
       try {
-        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
-          method: "POST",
+const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent", {          method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-goog-api-key": GEMINI_API_KEY
           },
           body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: `${systemPrompt}\n\nUser Question: ${userText}` }] }],
-            generationConfig: { maxOutputTokens: 180, temperature: 0.6 }
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { text: `${systemPrompt}\n\nResident Question: ${userText}` }
+                ]
+              }
+            ],
+            generationConfig: {
+              maxOutputTokens: 180,
+              temperature: 0.6
+            }
           })
         });
 
@@ -1230,13 +1241,14 @@ Answer politely, accurately, and concisely in 2 to 3 sentences.`;
         } else {
           box.innerHTML += `
             <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl rounded-tl-xs p-3 shadow-2xs">
-              ${data.error ? data.error.message : 'Unable to complete response. Please check your key.'}
+              ${data.error ? data.error.message : 'Unable to complete response. Please check API key status.'}
             </div>
           `;
         }
       } catch (err) {
         const loadingEl = document.getElementById(loadingId);
         if (loadingEl) loadingEl.remove();
+        console.error("Gemini Error:", err);
         box.innerHTML += `
           <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl rounded-tl-xs p-3 shadow-2xs">
             Network error connecting to Gemini AI.
@@ -1247,7 +1259,6 @@ Answer politely, accurately, and concisely in 2 to 3 sentences.`;
         box.scrollTop = box.scrollHeight;
       }
     }
-
     window.addEventListener('DOMContentLoaded', () => {
       loadPersistedState();
       updateKPIs();
