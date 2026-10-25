@@ -583,25 +583,69 @@ function onTowerChange(towerVal) {
     return;
   }
 
-  let units = [];
-  if (window.appState && Array.isArray(appState.properties) && appState.properties.length > 0) {
-    const isVilla = towerVal.includes('Villa');
-    units = appState.properties
-      .filter(p => isVilla ? (p.type === 'Mansion' || p.type === 'Villa') : p.tower === towerVal)
-      .map(p => p.id);
+  // Extract tower number or detect villa
+  const numMatch = towerVal.match(/\d+/);
+  const towerNum = numMatch ? numMatch[0] : '';
+  const isVillaSearch = /villa|mansion/i.test(towerVal);
+
+  let matchedProps = [];
+  const props = (window.appState && Array.isArray(appState.properties) && appState.properties.length > 0)
+    ? appState.properties
+    : (typeof INITIAL_PROPERTIES !== 'undefined' ? INITIAL_PROPERTIES : []);
+
+  if (props.length > 0) {
+    matchedProps = props.filter(p => {
+      const type = (p.type || '').toLowerCase();
+      const tower = (p.tower || '').toLowerCase();
+      const id = (p.id || '').toLowerCase();
+
+      if (isVillaSearch) {
+        return type.includes('villa') || type.includes('mansion') || id.startsWith('v-') || tower.includes('villa');
+      }
+
+      if (towerNum) {
+        const idMatches = id.startsWith(`t${towerNum}-`) || id.startsWith(`t0${towerNum}-`);
+        const towerMatches = tower.includes(towerNum) || tower.includes(`tower ${towerNum}`);
+        return idMatches || towerMatches;
+      }
+
+      return tower === towerVal.toLowerCase();
+    });
   }
 
-  if (!units || units.length === 0) {
-    units = MOCK_TOWERS[towerVal] || [];
+  let units = matchedProps.map(p => ({
+    id: p.id,
+    label: `${p.id} (${p.type === 'Mansion' || p.type === 'Villa' ? 'Villa' : 'Flat'} - Floor ${p.floor || 1})`
+  }));
+
+  if (units.length === 0) {
+    const rawMock = (typeof MOCK_TOWERS !== 'undefined' && MOCK_TOWERS[towerVal]) ? MOCK_TOWERS[towerVal] : [];
+    units = rawMock.map(u => ({ id: u, label: `Unit ${u}` }));
+  }
+
+  // Fallback: generate units on the fly if still empty
+  if (units.length === 0) {
+    if (isVillaSearch) {
+      for (let i = 1; i <= 20; i++) {
+        const vid = `V-${String(i).padStart(2, '0')}`;
+        units.push({ id: vid, label: `Villa ${vid}` });
+      }
+    } else if (towerNum) {
+      for (let i = 1; i <= 20; i++) {
+        const fid = `T${towerNum}-${Number(towerNum) * 100 + i}`;
+        units.push({ id: fid, label: `Unit ${fid}` });
+      }
+    }
   }
 
   units.forEach(u => {
     const opt = document.createElement('option');
-    opt.value = u;
-    opt.textContent = `Unit ${u}`;
+    opt.value = u.id;
+    opt.textContent = u.label;
     unitSelect.appendChild(opt);
   });
 
+  unitSelect.disabled = false;
   if (countBadge) countBadge.textContent = `${units.length} Units Available`;
 }
 
