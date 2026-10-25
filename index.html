@@ -76,97 +76,107 @@
        <!-- RESIDENT PHONE + OTP FLOW -->
         <div id="auth-resident-box" class="space-y-4">
           <!-- Step 1: Cascading Unit Selection & Phone Details -->
+          <!-- Step 1: Cascading Unit Selection & Phone Details -->
           <div id="otp-step-1" class="space-y-3.5">
+            <!-- Tower / Sector Dropdown -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
-              <input type="text" id="res-name" placeholder="e.g. Aarav Sharma" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700 bg-white">
-            </div>
-
-            <!-- Property Type Selector -->
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Property Type</label>
-              <select id="reg-category" onchange="handleCategoryChange()" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:border-brand-700">
-                <option value="">-- Choose Category --</option>
-                <option value="Tower">High-Rise Tower Flat</option>
-                <option value="Villa">Luxury Villa</option>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Select Tower / Zone</label>
+              <select id="reg-tower" onchange="onTowerChange(this.value)" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-brand-600 focus:bg-white transition">
+                <option value="">-- Choose Tower or Villas --</option>
+                <option value="Tower 1">Tower 1 (Units 101 - 120)</option>
+                <option value="Tower 2">Tower 2 (Units 201 - 220)</option>
+                <option value="Tower 3">Tower 3 (Units 301 - 320)</option>
+                <option value="Tower 4">Tower 4 (Units 401 - 420)</option>
+                <option value="Tower 5">Tower 5 (Units 501 - 520)</option>
+                <option value="Tower 6">Tower 6 (Units 601 - 620)</option>
+                <option value="Tower 7">Tower 7 (Units 701 - 720)</option>
+                <option value="Tower 8">Tower 8 (Units 801 - 820)</option>
+                <option value="Tower 9">Tower 9 (Units 901 - 920)</option>
+                <option value="Tower 10">Tower 10 (Units 1001 - 1020)</option>
+                <option value="Tower 11">Tower 11 (Units 1101 - 1120)</option>
+                <option value="Tower 12">Tower 12 (Units 1201 - 1220)</option>
+                <option value="Luxury Villas">Signature Luxury Villas (V-01 - V-20)</option>
               </select>
             </div>
 
-            <!-- Tower Selector (Hidden initially) -->
-            <div id="tower-group" class="hidden">
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Select Tower</label>
-              <select id="reg-tower" onchange="populateTowerFlats()" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:border-brand-700">
-                <option value="">-- Choose Tower --</option>
-                <option value="Tower A">Tower A</option>
-                <option value="Tower B">Tower B</option>
-                <option value="Tower C">Tower C</option>
-                <option value="Tower D">Tower D</option>
-              </select>
-            </div>
-
-            <!-- Flat / Villa Unit Selector -->
+            <!-- Flat / Unit Dropdown -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Select Flat / Villa</label>
-              <select id="reg-unit" disabled class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 bg-white focus:outline-none focus:border-brand-700">
-                <option value="">-- Select Type First --</option>
-              </select>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500">Flat / Unit Number</label>
+                <span id="unit-count-badge" class="text-[10px] text-slate-400">Select Tower First</span>
               </div>
+              <select id="reg-unit" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-slate-50 text-slate-800 font-medium focus:outline-none focus:border-brand-600 focus:bg-white transition">
+                <option value="">-- Select Flat / Villa --</option>
+              </select>
+            </div>
 
-            <!-- Mobile Number -->
+            <!-- Resident Name & Phone -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Mobile Number (10 Digits)</label>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Primary Resident Name</label>
+              <input id="reg-name" type="text" placeholder="e.g. Kishlay Ranjan" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:border-brand-600 transition">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Registered Mobile Number</label>
               <div class="flex">
-                <span class="inline-flex items-center px-3 text-xs font-semibold text-slate-600 bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg">+91</span>
-                <input type="tel" id="res-phone" maxlength="10" placeholder="9876543210" class="w-full text-xs border border-slate-300 rounded-r-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700 bg-white">
+                <span class="inline-flex items-center px-3 text-xs bg-slate-100 border border-r-0 border-slate-300 rounded-l-lg text-slate-500 font-semibold">+91</span>
+                <input id="reg-phone" type="tel" maxlength="10" placeholder="98765 43210" class="flex-1 text-xs border border-slate-300 rounded-r-lg p-2.5 focus:outline-none focus:border-brand-600 transition">
               </div>
             </div>
 
-            <button type="button" onclick="handleResidentRegistration()" class="w-full bg-brand-700 hover:bg-brand-900 text-white font-semibold text-xs py-3 rounded-lg transition shadow-sm">
-              Confirm & Bind Unit
+            <button onclick="requestResidentOTP()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer mt-2">
+              Send Verification OTP →
             </button>
           </div>
-          <!-- Step 2: Verify OTP -->
+
+          <!-- Step 2: OTP Verification Box (Hidden Initially) -->
           <div id="otp-step-2" class="space-y-4 hidden">
-            <div class="p-3 rounded-lg bg-brand-50 border border-brand-100 text-xs text-brand-900">
-              <p class="font-semibold">OTP Dispatched to <span id="display-phone"></span></p>
-              <p class="mt-0.5 text-[11px]">SMS Gateway Simulation Code: <strong id="sim-otp-code" class="text-sm underline"></strong></p>
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+              <div>
+                <p class="text-[11px] font-bold text-emerald-800">OTP Sent Successfully</p>
+                <p id="otp-display-phone" class="text-xs text-emerald-600 font-medium"></p>
+              </div>
+              <span class="text-[10px] bg-emerald-200 text-emerald-800 font-bold px-2 py-0.5 rounded">Demo OTP: 1234</span>
             </div>
+
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Enter 6-Digit OTP</label>
-              <input type="text" id="res-otp-input" maxlength="6" placeholder="••••••" class="w-full text-center tracking-widest text-base font-bold border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Enter 4-Digit OTP</label>
+              <input id="otp-input" type="text" maxlength="4" placeholder="• • • •" class="w-full text-center tracking-widest text-lg font-bold border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:border-brand-600 transition">
             </div>
+
             <div class="flex gap-2">
-              <button onclick="resetOtpFlow()" class="w-1/3 border border-slate-300 text-slate-700 font-semibold text-xs py-2.5 rounded-lg hover:bg-slate-50">Back</button>
-              <button onclick="verifyResidentOTP()" class="w-2/3 bg-brand-700 hover:bg-brand-900 text-white font-semibold text-xs py-2.5 rounded-lg transition">Verify & Register Forever</button>
+              <button onclick="backToStep1()" class="py-2.5 px-4 border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition">
+                Back
+              </button>
+              <button onclick="verifyResidentOTP()" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold transition shadow-sm">
+                Verify & Enter Portal →
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- ADMINISTRATOR PASSWORD FLOW -->
+        <!-- ADMINISTRATOR LOGIN FLOW -->
         <div id="auth-admin-box" class="space-y-4 hidden">
-          <div class="p-3 rounded-lg bg-slate-100 border border-slate-200 text-xs text-slate-600">
-            Administrator mode unlocks 3D unit status overrides, lease approvals, and maintenance ticket resolution controls.
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Admin Username / Email</label>
+            <input id="admin-user" type="text" value="admin@zenithenclave.com" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:border-brand-600 transition">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Administrator Master Password</label>
-            <input type="password" id="admin-pass-input" placeholder="Enter master password (zenith2026)" class="w-full text-xs border border-slate-300 rounded-lg px-3.5 py-2.5 focus:outline-none focus:border-brand-700">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Secret Access Key</label>
+            <input id="admin-pass" type="password" value="admin123" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:border-brand-600 transition">
           </div>
-          <p id="admin-err-msg" class="text-xs text-red-600 font-semibold hidden">Invalid Administrator Password. Please try again.</p>
-          <button onclick="verifyAdminLogin()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-3 rounded-lg transition">
-            Unlock Township Admin OS
+          <p class="text-[10px] text-slate-400">Default Sandbox Admin: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-700">admin@zenithenclave.com</code> / <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-700">admin123</code></p>
+          <button onclick="authenticateAdmin()" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer">
+            Access Command Center →
           </button>
         </div>
 
-        <!-- Registered Resident Directory Count -->
-        <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span>Persistent Local Registry Active</span>
-          <span id="reg-count-badge">0 Registered Devices</span>
-        </div>
       </div>
-
     </div>
   </div>
-
+  <!-- ========================================== -->
+  <!-- END OF AUTHENTICATION GATE -->
+  <!-- ========================================== -->
   <!-- ========================================== -->
   <!-- TOP NAVIGATION BAR                         -->
   <!-- ========================================== -->
@@ -177,27 +187,53 @@
           <i data-lucide="building-2" class="w-5 h-5"></i>
         </div>
         <div>
-          <span class="text-base font-bold tracking-tight text-slate-900 block leading-none">Zenith Enclave</span>
-          <span class="text-[11px] text-slate-500 font-medium" id="user-greeting">NestSync PropTech OS · 260 Units</span>
+          <span class="text-base font-bold tracking-tight text-slate-900 block leading-tight">Zenith Enclave</span>
+          <span class="text-[11px] text-slate-500 font-medium">Smart Township OS</span>
         </div>
       </div>
 
+      <!-- Navigation Tabs -->
       <nav class="hidden md:flex items-center space-x-1">
-        <button onclick="switchTab('map')" id="btn-map" class="px-3 py-2 rounded-md text-xs font-semibold text-brand-700 bg-brand-50 transition">3D Township Map</button>
-        <button onclick="switchTab('explorer')" id="btn-explorer" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Property Explorer</button>
-        <button onclick="switchTab('matching')" id="btn-matching" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Roommate Matcher</button>
-        <button onclick="switchTab('bulletin')" id="btn-bulletin" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Community Board</button>
-        <button onclick="switchTab('portal')" id="btn-portal" class="px-3 py-2 rounded-md text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">Bookings & Helpdesk</button>
+        <button id="nav-btn-map" onclick="switchTab('map')" class="px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-brand-50 text-brand-700">
+          <i data-lucide="box" class="w-4 h-4"></i>
+          <span>3D Masterplan</span>
+        </button>
+        <button id="nav-btn-directory" onclick="switchTab('directory')" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition flex items-center gap-1.5">
+          <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          <span>Property Explorer</span>
+        </button>
+        <button id="nav-btn-portal" onclick="switchTab('portal')" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition flex items-center gap-1.5">
+          <i data-lucide="home" class="w-4 h-4"></i>
+          <span>Resident Portal</span>
+        </button>
+        <button id="nav-btn-admin" onclick="switchTab('admin')" class="px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition flex items-center gap-1.5">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <span>Admin Command</span>
+        </button>
       </nav>
 
-      <div class="flex items-center space-x-2">
-        <button onclick="promptRoleSwitch()" id="admin-btn" class="px-3 py-1.5 rounded-md text-xs font-semibold border border-slate-300 text-slate-700 hover:bg-slate-100 transition flex items-center gap-1.5">
-          <i data-lucide="shield" class="w-3.5 h-3.5"></i> <span id="admin-label">Role: Resident</span>
-        </button>
-        <button onclick="logoutSession()" title="Switch Account / Logout" class="p-1.5 rounded-md border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 transition">
+      <!-- Right Header Actions (User Badge + Logout) -->
+      <div class="flex items-center space-x-3">
+        <div id="header-user-badge" class="flex items-center space-x-2 bg-slate-50 border border-slate-200 py-1.5 px-3 rounded-lg">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <div class="text-left">
+            <p id="header-user-name" class="text-xs font-bold text-slate-800 leading-none">Guest Resident</p>
+            <p id="header-user-unit" class="text-[10px] text-slate-400 font-medium">Unit T1-101</p>
+          </div>
+        </div>
+
+        <button onclick="logoutActiveUser()" title="Logout Session" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
       </div>
+    </div>
+
+    <!-- Mobile Sub-Navigation Bar -->
+    <div class="flex md:hidden border-t border-slate-100 px-3 py-2 overflow-x-auto space-x-2 bg-slate-50/50">
+      <button onclick="switchTab('map')" class="px-3 py-1.5 rounded-md text-xs font-bold whitespace-nowrap bg-brand-50 text-brand-700">3D Map</button>
+      <button onclick="switchTab('directory')" class="px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap text-slate-600">Explorer</button>
+      <button onclick="switchTab('portal')" class="px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap text-slate-600">Portal</button>
+      <button onclick="switchTab('admin')" class="px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap text-slate-600">Admin</button>
     </div>
   </header>
 
@@ -516,7 +552,155 @@
     const STORAGE_KEY_STATE = 'zenith_enclave_state_v1';
     const STORAGE_KEY_USER = 'zenith_enclave_user_v1';
     const STORAGE_KEY_RESIDENTS = 'zenith_enclave_residents_v1';
+// --- AUTHENTICATION & CASCADING UNIT DROPDOWN CONTROLLER ---
 
+// Fallback unit database for all 12 Towers + 20 Villas
+const MOCK_TOWERS = {
+  'Tower 1': Array.from({ length: 20 }, (_, i) => `T1-${101 + i}`),
+  'Tower 2': Array.from({ length: 20 }, (_, i) => `T2-${201 + i}`),
+  'Tower 3': Array.from({ length: 20 }, (_, i) => `T3-${301 + i}`),
+  'Tower 4': Array.from({ length: 20 }, (_, i) => `T4-${401 + i}`),
+  'Tower 5': Array.from({ length: 20 }, (_, i) => `T5-${501 + i}`),
+  'Tower 6': Array.from({ length: 20 }, (_, i) => `T6-${601 + i}`),
+  'Tower 7': Array.from({ length: 20 }, (_, i) => `T7-${701 + i}`),
+  'Tower 8': Array.from({ length: 20 }, (_, i) => `T8-${801 + i}`),
+  'Tower 9': Array.from({ length: 20 }, (_, i) => `T9-${901 + i}`),
+  'Tower 10': Array.from({ length: 20 }, (_, i) => `T10-${1001 + i}`),
+  'Tower 11': Array.from({ length: 20 }, (_, i) => `T11-${1101 + i}`),
+  'Tower 12': Array.from({ length: 20 }, (_, i) => `T12-${1201 + i}`),
+  'Luxury Villas': Array.from({ length: 20 }, (_, i) => `V-${String(i + 1).padStart(2, '0')}`)
+};
+
+function onTowerChange(towerVal) {
+  const unitSelect = document.getElementById('reg-unit');
+  const countBadge = document.getElementById('unit-count-badge');
+  if (!unitSelect) return;
+
+  unitSelect.innerHTML = '<option value="">-- Select Flat / Villa --</option>';
+
+  if (!towerVal) {
+    if (countBadge) countBadge.textContent = 'Select Tower First';
+    return;
+  }
+
+  let units = [];
+  if (window.appState && Array.isArray(appState.properties) && appState.properties.length > 0) {
+    const isVilla = towerVal.includes('Villa');
+    units = appState.properties
+      .filter(p => isVilla ? (p.type === 'Mansion' || p.type === 'Villa') : p.tower === towerVal)
+      .map(p => p.id);
+  }
+
+  if (!units || units.length === 0) {
+    units = MOCK_TOWERS[towerVal] || [];
+  }
+
+  units.forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u;
+    opt.textContent = `Unit ${u}`;
+    unitSelect.appendChild(opt);
+  });
+
+  if (countBadge) countBadge.textContent = `${units.length} Units Available`;
+}
+
+function setAuthTab(mode) {
+  const resBtn = document.getElementById('tab-res-btn');
+  const admBtn = document.getElementById('tab-adm-btn');
+  const resBox = document.getElementById('auth-resident-box');
+  const admBox = document.getElementById('auth-admin-box');
+
+  if (mode === 'resident') {
+    resBtn.className = 'py-2 text-xs font-bold rounded-md bg-white text-slate-900 shadow-xs transition';
+    admBtn.className = 'py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
+    resBox.classList.remove('hidden');
+    admBox.classList.add('hidden');
+  } else {
+    admBtn.className = 'py-2 text-xs font-bold rounded-md bg-white text-slate-900 shadow-xs transition';
+    resBtn.className = 'py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
+    admBox.classList.remove('hidden');
+    resBox.classList.add('hidden');
+  }
+}
+
+function requestResidentOTP() {
+  const tower = document.getElementById('reg-tower').value;
+  const unit = document.getElementById('reg-unit').value;
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+
+  if (!tower || !unit) {
+    alert('Please select both your Tower and Flat/Unit number.');
+    return;
+  }
+  if (!name) {
+    alert('Please enter your name.');
+    return;
+  }
+  if (!phone || phone.length < 10) {
+    alert('Please enter a valid 10-digit mobile number.');
+    return;
+  }
+
+  document.getElementById('otp-display-phone').textContent = `Mobile: +91 ${phone} · Unit: ${unit}`;
+  document.getElementById('otp-step-1').classList.add('hidden');
+  document.getElementById('otp-step-2').classList.remove('hidden');
+}
+
+function backToStep1() {
+  document.getElementById('otp-step-2').classList.add('hidden');
+  document.getElementById('otp-step-1').classList.remove('hidden');
+}
+
+function verifyResidentOTP() {
+  const otp = document.getElementById('otp-input').value.trim();
+  if (otp !== '1234' && otp.length !== 4) {
+    alert('Invalid OTP. Use demo OTP: 1234');
+    return;
+  }
+
+  const user = {
+    role: 'resident',
+    name: document.getElementById('reg-name').value.trim(),
+    phone: document.getElementById('reg-phone').value.trim(),
+    unit: document.getElementById('reg-unit').value,
+    tower: document.getElementById('reg-tower').value
+  };
+
+  localStorage.setItem('zenith_active_user', JSON.stringify(user));
+  
+  const headerName = document.getElementById('header-user-name');
+  const headerUnit = document.getElementById('header-user-unit');
+  if (headerName) headerName.textContent = user.name;
+  if (headerUnit) headerUnit.textContent = `Unit ${user.unit}`;
+
+  document.getElementById('auth-gate').classList.add('hidden');
+}
+
+function authenticateAdmin() {
+  const user = document.getElementById('admin-user').value.trim();
+  const pass = document.getElementById('admin-pass').value.trim();
+
+  if (user === 'admin@zenithenclave.com' && pass === 'admin123') {
+    const adminObj = { role: 'admin', name: 'Administrator', unit: 'HQ-Control' };
+    localStorage.setItem('zenith_active_user', JSON.stringify(adminObj));
+    
+    const headerName = document.getElementById('header-user-name');
+    const headerUnit = document.getElementById('header-user-unit');
+    if (headerName) headerName.textContent = 'Administrator';
+    if (headerUnit) headerUnit.textContent = 'HQ Command';
+
+    document.getElementById('auth-gate').classList.add('hidden');
+  } else {
+    alert('Invalid Admin credentials. Use admin@zenithenclave.com / admin123');
+  }
+}
+
+function logoutActiveUser() {
+  localStorage.removeItem('zenith_active_user');
+  location.reload();
+}
     // 1. Initialize Supabase Client
     const SUPABASE_URL = 'https://jomqdpxsurriykpbtido.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvbXFkcHhzdXJyaXlrcGJ0aWRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NTM2MjgsImV4cCI6MjEwODQyOTYyOH0.EbXOu-4fp9ON2aFuZi_dC64Xpdi5pVAr4o5SFDtTOQA';
